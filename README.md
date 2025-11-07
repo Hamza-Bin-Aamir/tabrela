@@ -1,70 +1,93 @@
-# Getting Started with Create React App
+# Tabrela
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Tabbing in Reverse!
 
-## Available Scripts
+In traditional tabulation, the tab data lives on an island. Tabrela flips this model on its head. It's a **FOSS, debater-centric platform** designed from the ground up to be a permanent, portable, and verifiable "Debate Portfolio" for your entire debate career.
 
-In the project directory, you can run:
+This project is not a replacement for tabbing software like Tabbycat. It's a **meta-layer** that sits on top of the circuit, allowing users to aggregate and verify their experience.
 
-### `npm start`
+## 1. The Problem (Why We're Building This)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+The global debate circuit runs on "legitimacy," but the tools to prove it are broken.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### The "Discovery Problem" 
+Tournament CAs are forced to rely on small, insular networks to find judges and tab staff, missing out on incredible (but "unknown") talent from emerging circuits.
+### The "Lost Data" Problem
+A debater's career is a scattered collection of tab screenshots, PDF certificates, and fading memories. There is no single, verifiable source of truth.
 
-### `npm test`
+### The "Walled Garden" Problem 
+Most platforms are centralized. Tabrela is being built as a **federated, open-source protocol** that any institution can self-host.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 2. Core Features
 
-### `npm run build`
+Tabrela is being built as a tool that provides a direct, tangible product to every user: a single, verifiable "Debate Resume."
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+* **🗣️ Holistic Portfolios:** Track all your experience in one place: Speaking, Adjudication, Tabulation, CA, Org Comm, and Equity.
+* **🔒 Three-Tier Verification:** A transparent trust system.
+    * **[Tier 1: Self-Reported]** Add any entry instantly.
+    * **[Tier 2: Evidence-Submitted]** Attach proof (like a tab screenshot) for peer review. The UI warns viewers this is unverified.
+    * **[Tier 3: Organizer-Verified]** The "gold standard." This is verified directly through a connected tab or through organisers.
+* **🎓 The "Learning Hub":** An opt-in library of mastery-based modules. New users can earn badges (e.g., `[Badge] Tabulation 101`) by passing automated, scenario-based simulators to prove their skills *before* they have experience.
+* **📥 Portable & Downloadable:** Users own their data. Download your entire verified resume as a standardized `JSON` file or a printable `PDF` at any time.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 3. Tech & Architecture Philosophy
 
-### `npm run eject`
+This project is built to be a **non-profit public utility.**
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+* **FOSS & Self-Hostable:** This is the core principle. Tabrela is a protocol, not just one platform. Any institution can self-host its own instance.
+* **Federated:** A user's cryptographically-signed data is designed to be portable, allowing migration between instances without losing credentials.
+* **API-First:** The "Talent Discovery" engine is a set of API endpoints. The core Tabrela app is just the first client that consumes it.
+* **Mobile-First & Accessible:** The platform *must* be lightweight, work on low-cost devices, and support translation (e.g., into Urdu) to be truly inclusive.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Tech Stack
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+* **Frontend:** React
+* **Backend:** Rust, Python
+* **Database:** Postgres
+* **Infra:** Docker + Microservices
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 4. Getting Started (Development)
 
-## Learn More
+We are in the early stages and need builders!
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1.  **Fork & Clone the repo:**
+    ```bash
+    git clone https://github.com/hamza-bin-aamir/tabrela.git
+    cd tabrela
+    ```
+    or, if you want to use your own fork:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    ```bash
+    git clone https://github.com/your-username/tabrela.git
+    cd tabrela
+    ```
 
-### Code Splitting
+2.  **Install dependencies:**
+    ```bash
+    cd server
+    npm install
+    
+    cd client
+    npm install
+    ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+3.  **Run the dev server:**
+    ```bash
+    # Example
+    npm run dev
+    ```
 
-### Analyzing the Bundle Size
+4.  For detailed setup, see `DOCKER.md` for our containerized environment.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 5. How to Contribute
 
-### Making a Progressive Web App
+We are actively looking for contributors. This is a massive project, and we welcome help in all forms.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+* **📖 Read our [CONTRIBUTING.md]** for setup guides and our code of conduct.
+* **💬 Join the [Discussion on WhatsApp]** to be part of the design process.
+* **🛠️ Check our [Project Roadmap/Issues]** to find a task.
 
-### Advanced Configuration
+## 6. License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the **BSD License** - see the [LICENSE.md](LICENSE.md) file for details.
