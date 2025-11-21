@@ -65,10 +65,6 @@ We are in the early stages and need builders!
 
 2.  **Install dependencies:**
     ```bash
-    cd server
-    npm install
-    
-    cd client
     npm install
     ```
 
