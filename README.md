@@ -6,32 +6,15 @@ In traditional tabulation, the tab data lives on an island. Tabrela flips this m
 
 This project is not a replacement for tabbing software like Tabbycat. It's a **meta-layer** that sits on top of the circuit, allowing users to aggregate and verify their experience.
 
-## 1. The Problem (Why We're Building This)
-
-The global debate circuit runs on "legitimacy," but the tools to prove it are broken.
-
-### The "Discovery Problem" 
-Tournament CAs are forced to rely on small, insular networks to find judges and tab staff, missing out on incredible (but "unknown") talent from emerging circuits.
-### The "Lost Data" Problem
-A debater's career is a scattered collection of tab screenshots, PDF certificates, and fading memories. There is no single, verifiable source of truth.
-
-### The "Walled Garden" Problem 
-Most platforms are centralized. Tabrela is being built as a **federated, open-source protocol** that any institution can self-host.
-
-## 2. Core Features
+## 1. Core Features
 
 Tabrela is being built as a tool that provides a direct, tangible product to every user: a single, verifiable "Debate Resume."
 
-
 * **🗣️ Holistic Portfolios:** Track all your experience in one place: Speaking, Adjudication, Tabulation, CA, Org Comm, and Equity.
-* **🔒 Three-Tier Verification:** A transparent trust system.
-    * **[Tier 1: Self-Reported]** Add any entry instantly.
-    * **[Tier 2: Evidence-Submitted]** Attach proof (like a tab screenshot) for peer review. The UI warns viewers this is unverified.
-    * **[Tier 3: Organizer-Verified]** The "gold standard." This is verified directly through a connected tab or through organisers.
 * **🎓 The "Learning Hub":** An opt-in library of mastery-based modules. New users can earn badges (e.g., `[Badge] Tabulation 101`) by passing automated, scenario-based simulators to prove their skills *before* they have experience.
 * **📥 Portable & Downloadable:** Users own their data. Download your entire verified resume as a standardized `JSON` file or a printable `PDF` at any time.
 
-## 3. Tech & Architecture Philosophy
+## 2. Tech & Architecture Philosophy
 
 This project is built to be a **non-profit public utility.**
 
@@ -47,9 +30,7 @@ This project is built to be a **non-profit public utility.**
 * **Database:** Postgres
 * **Infra:** Docker + Microservices
 
-## 4. Getting Started (Development)
-
-We are in the early stages and need builders!
+## 3. Getting Started (Development)
 
 1.  **Fork & Clone the repo:**
     ```bash
@@ -76,7 +57,7 @@ We are in the early stages and need builders!
 
 4.  For detailed setup, see `DOCKER.md` for our containerized environment.
 
-## 5. How to Contribute
+## 4. How to Contribute
 
 We are actively looking for contributors. This is a massive project, and we welcome help in all forms.
 
@@ -84,6 +65,6 @@ We are actively looking for contributors. This is a massive project, and we welc
 * **💬 Join the [Discussion on WhatsApp]** to be part of the design process.
 * **🛠️ Check our [Project Roadmap/Issues]** to find a task.
 
-## 6. License
+## 5. License
 
 This project is licensed under the **BSD License** - see the [LICENSE.md](LICENSE.md) file for details.
