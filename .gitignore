@@ -23,3 +23,41 @@ yarn-debug.log*
 yarn-error.log*
 
 package-lock.json
+.env
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test coverage
+coverage/
+*.profraw
+*.profdata
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+
+# Process IDs
+.server.pid
+
+# Documentation build
+target/doc/
