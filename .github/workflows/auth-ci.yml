@@ -23,7 +23,7 @@ jobs:
       run:
         working-directory: ./services/auth
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -33,19 +33,19 @@ jobs:
           override: true
       
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Cache cargo index
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Cache cargo build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: services/auth/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -60,7 +60,7 @@ jobs:
       run:
         working-directory: ./services/auth
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -80,7 +80,7 @@ jobs:
       run:
         working-directory: ./services/auth
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -116,7 +116,7 @@ jobs:
           --health-retries 5
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -175,7 +175,7 @@ jobs:
           --health-retries 5
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -211,7 +211,7 @@ jobs:
           PASSWORD_PEPPER: test-pepper-for-ci-pipeline
       
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./services/auth/cobertura.xml
           flags: auth-service
@@ -224,7 +224,7 @@ jobs:
       run:
         working-directory: ./services/auth
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -247,7 +247,7 @@ jobs:
       run:
         working-directory: ./services/auth
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -260,7 +260,7 @@ jobs:
         run: cargo build --release --verbose
       
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: auth-service
           path: services/auth/target/release/auth
@@ -271,7 +271,7 @@ jobs:
     needs: [build]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/mvp')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
