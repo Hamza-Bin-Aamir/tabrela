@@ -132,6 +132,7 @@ jobs:
         run: |
           cp .env.example .env
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
+          echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
           echo "JWT_SECRET=test-jwt-secret-for-ci-pipeline" >> .env
           echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
       
@@ -193,6 +194,7 @@ jobs:
         run: |
           cp .env.example .env
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
+          echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
           echo "JWT_SECRET=test-jwt-secret-for-ci-pipeline" >> .env
           echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
       
