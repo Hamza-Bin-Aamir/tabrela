@@ -1,11 +1,22 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isAuthenticated, user, logout } = useAuth()
 
   const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen)
   const closeMenu = () => setMobileMenuOpen(false)
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      closeMenu()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   return (
     <header className="site-header" role="banner">
@@ -41,12 +52,25 @@ export default function Header() {
           <Link to="/about" className="nav-link">
             About
           </Link>
-          <Link to="/login" className="nav-link">
-            Log in
-          </Link>
-          <Link to="/signup" className="nav-link">
-            Sign up
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <span className="nav-link cursor-default">
+                Hi, {user?.username}
+              </span>
+              <button onClick={handleLogout} className="nav-link">
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-link">
+                Log in
+              </Link>
+              <Link to="/signup" className="nav-link">
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Mobile navigation - slide-in menu */}
@@ -68,20 +92,33 @@ export default function Header() {
           >
             About
           </Link>
-          <Link 
-            to="/login" 
-            className="mobile-nav-link"
-            onClick={closeMenu}
-          >
-            Log in
-          </Link>
-          <Link 
-            to="/signup" 
-            className="mobile-nav-link"
-            onClick={closeMenu}
-          >
-            Sign up
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <span className="mobile-nav-link cursor-default">
+                Hi, {user?.username}
+              </span>
+              <button onClick={handleLogout} className="mobile-nav-link w-full text-left">
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link 
+                to="/login" 
+                className="mobile-nav-link"
+                onClick={closeMenu}
+              >
+                Log in
+              </Link>
+              <Link 
+                to="/signup" 
+                className="mobile-nav-link"
+                onClick={closeMenu}
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Backdrop overlay for mobile menu */}

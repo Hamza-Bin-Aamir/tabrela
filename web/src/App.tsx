@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -18,28 +19,30 @@ import './App.css'
 function App() {
   return (
     <BrowserRouter>
-      <div className="app-shell">
-        <Header />
-        <main className="site-main">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/faq" element={<FAQPage />} />
-            <Route path="/mission" element={<MissionPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/accessibility" element={<AccessibilityPage />} />
-            <Route path="/loading" element={<LoadingPage />} />
-            <Route path="/error" element={<ErrorPage />} />
-            {/* fallback to home */}
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AuthProvider>
+        <div className="app-shell">
+          <Header />
+          <main className="site-main">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/mission" element={<MissionPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/accessibility" element={<AccessibilityPage />} />
+              <Route path="/loading" element={<LoadingPage />} />
+              <Route path="/error" element={<ErrorPage />} />
+              {/* fallback to home */}
+              <Route path="*" element={<Home />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
