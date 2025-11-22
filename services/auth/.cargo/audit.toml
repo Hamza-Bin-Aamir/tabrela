@@ -1,0 +1,8 @@
+[advisories]
+# Ignore RSA vulnerability from sqlx-mysql since we only use PostgreSQL
+ignore = [
+    "RUSTSEC-2023-0071",  # RSA Marvin Attack - only affects MySQL, we use PostgreSQL
+]
+
+# Allow informational warnings for unmaintained crates
+informational_warnings = ["unmaintained"]
