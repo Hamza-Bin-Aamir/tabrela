@@ -21,10 +21,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Start server
     let addr = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
-    
+
     tracing::info!("Auth service listening on {}", addr);
-    tracing::info!("CORS mode: {}", if config.cors_strict_mode { "strict" } else { "permissive" });
-    
+    tracing::info!(
+        "CORS mode: {}",
+        if config.cors_strict_mode {
+            "strict"
+        } else {
+            "permissive"
+        }
+    );
+
     axum::serve(listener, app).await?;
 
     Ok(())

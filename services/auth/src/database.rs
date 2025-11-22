@@ -1,7 +1,7 @@
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use crate::models::{CsrfToken, RefreshToken, User};
+use chrono::{DateTime, Duration, Utc};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use uuid::Uuid;
-use chrono::{DateTime, Utc, Duration};
-use crate::models::{User, RefreshToken, CsrfToken};
 
 #[derive(Clone)]
 pub struct Database {
@@ -202,7 +202,7 @@ impl Database {
         expiry_seconds: i64,
     ) -> Result<CsrfToken, sqlx::Error> {
         let expires_at = Utc::now() + Duration::seconds(expiry_seconds);
-        
+
         let csrf_token = sqlx::query_as::<_, CsrfToken>(
             r#"
             INSERT INTO csrf_tokens (id, token, user_id, expires_at, created_at)
@@ -222,10 +222,7 @@ impl Database {
     }
 
     /// Validate a CSRF token - uses parameterized queries
-    pub async fn validate_csrf_token(
-        &self,
-        token: &str,
-    ) -> Result<Option<CsrfToken>, sqlx::Error> {
+    pub async fn validate_csrf_token(&self, token: &str) -> Result<Option<CsrfToken>, sqlx::Error> {
         let csrf_token = sqlx::query_as::<_, CsrfToken>(
             r#"
             SELECT id, token, user_id, expires_at, created_at
@@ -283,11 +280,11 @@ mod tests {
     async fn setup_test_db() -> Database {
         // Load .env file if it exists
         dotenv::dotenv().ok();
-        
+
         let database_url = std::env::var("TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
             .unwrap_or_else(|_| "postgresql://postgres:postgres@localhost/auth_test".to_string());
-        
+
         Database::new(&database_url).await.unwrap()
     }
 
@@ -295,14 +292,17 @@ mod tests {
     #[ignore]
     async fn test_create_and_find_user() {
         let db = setup_test_db().await;
-        
+
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let password_hash = "hash";
         let salt = "salt";
 
-        let user = db.create_user(&username, &email, password_hash, salt).await.unwrap();
-        
+        let user = db
+            .create_user(&username, &email, password_hash, salt)
+            .await
+            .unwrap();
+
         assert_eq!(user.username, username);
         assert_eq!(user.email, email);
 
@@ -315,14 +315,17 @@ mod tests {
     #[ignore]
     async fn test_find_user_by_email() {
         let db = setup_test_db().await;
-        
+
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let password_hash = "hash";
         let salt = "salt";
 
-        let user = db.create_user(&username, &email, password_hash, salt).await.unwrap();
-        
+        let user = db
+            .create_user(&username, &email, password_hash, salt)
+            .await
+            .unwrap();
+
         let found_user = db.find_user_by_email(&email).await.unwrap();
         assert!(found_user.is_some());
         assert_eq!(found_user.unwrap().id, user.id);
@@ -332,17 +335,22 @@ mod tests {
     #[ignore]
     async fn test_store_and_find_refresh_token() {
         let db = setup_test_db().await;
-        
+
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
-        let user = db.create_user(&username, &email, "hash", "salt").await.unwrap();
-        
+        let user = db
+            .create_user(&username, &email, "hash", "salt")
+            .await
+            .unwrap();
+
         let token_hash = format!("token_hash_{}", Uuid::new_v4());
         let expires_at = Utc::now() + Duration::hours(1);
 
-        db.store_refresh_token(user.id, &token_hash, expires_at).await.unwrap();
-        
+        db.store_refresh_token(user.id, &token_hash, expires_at)
+            .await
+            .unwrap();
+
         let found_token = db.find_refresh_token(&token_hash).await.unwrap();
         assert!(found_token.is_some());
         assert_eq!(found_token.unwrap().user_id, user.id);
@@ -352,18 +360,23 @@ mod tests {
     #[ignore]
     async fn test_delete_refresh_token() {
         let db = setup_test_db().await;
-        
+
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
-        let user = db.create_user(&username, &email, "hash", "salt").await.unwrap();
-        
+        let user = db
+            .create_user(&username, &email, "hash", "salt")
+            .await
+            .unwrap();
+
         let token_hash = format!("token_hash_{}", Uuid::new_v4());
         let expires_at = Utc::now() + Duration::hours(1);
 
-        db.store_refresh_token(user.id, &token_hash, expires_at).await.unwrap();
+        db.store_refresh_token(user.id, &token_hash, expires_at)
+            .await
+            .unwrap();
         db.delete_refresh_token(&token_hash).await.unwrap();
-        
+
         let found_token = db.find_refresh_token(&token_hash).await.unwrap();
         assert!(found_token.is_none());
     }
@@ -372,18 +385,23 @@ mod tests {
     #[ignore]
     async fn test_create_and_validate_csrf_token() {
         let db = setup_test_db().await;
-        
+
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
-        let user = db.create_user(&username, &email, "hash", "salt").await.unwrap();
-        
+        let user = db
+            .create_user(&username, &email, "hash", "salt")
+            .await
+            .unwrap();
+
         let token = format!("csrf_token_{}", Uuid::new_v4());
         let user_id = Some(user.id);
         let expiry_seconds = 3600;
 
-        db.create_csrf_token(&token, user_id, expiry_seconds).await.unwrap();
-        
+        db.create_csrf_token(&token, user_id, expiry_seconds)
+            .await
+            .unwrap();
+
         let found_token = db.validate_csrf_token(&token).await.unwrap();
         assert!(found_token.is_some());
         assert_eq!(found_token.unwrap().user_id, user_id);

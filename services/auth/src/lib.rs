@@ -1,3 +1,4 @@
+pub mod auth_middleware;
 pub mod config;
 pub mod csrf;
 pub mod database;
@@ -5,7 +6,6 @@ pub mod handlers;
 pub mod jwt;
 pub mod models;
 pub mod security;
-pub mod auth_middleware;
 
 pub use config::Config;
 pub use database::Database;
@@ -97,19 +97,17 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::HeaderName::from_static("x-csrf-token"),
             ])
             .allow_credentials(true)
+    } else if config.allowed_origins.contains(&"*".to_string()) {
+        CorsLayer::permissive()
     } else {
-        if config.allowed_origins.contains(&"*".to_string()) {
-            CorsLayer::permissive()
-        } else {
-            let mut cors_layer = CorsLayer::new().allow_origin(Any);
-            for origin in &config.allowed_origins {
-                if origin != "*" {
-                    if let Ok(header_value) = origin.parse::<http::header::HeaderValue>() {
-                        cors_layer = cors_layer.allow_origin(header_value);
-                    }
+        let mut cors_layer = CorsLayer::new().allow_origin(Any);
+        for origin in &config.allowed_origins {
+            if origin != "*" {
+                if let Ok(header_value) = origin.parse::<http::header::HeaderValue>() {
+                    cors_layer = cors_layer.allow_origin(header_value);
                 }
             }
-            cors_layer.allow_methods(Any).allow_headers(Any)
         }
+        cors_layer.allow_methods(Any).allow_headers(Any)
     }
 }

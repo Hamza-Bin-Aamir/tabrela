@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -84,11 +84,11 @@ impl From<User> for UserResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,  // user_id
+    pub sub: String, // user_id
     pub username: String,
     pub exp: i64,
     pub iat: i64,
-    pub jti: String,  // JWT ID - unique identifier for each token
+    pub jti: String, // JWT ID - unique identifier for each token
     pub token_type: TokenType,
 }
 
@@ -117,7 +117,7 @@ mod tests {
 
         let user_id = user.id;
         let response: UserResponse = user.into();
-        
+
         assert_eq!(response.id, user_id);
         assert_eq!(response.username, "testuser");
         assert_eq!(response.email, "test@example.com");
@@ -145,7 +145,7 @@ mod tests {
         assert!(valid_request.validate().is_ok());
 
         let invalid_username = RegisterRequest {
-            username: "ab".to_string(),  // Too short
+            username: "ab".to_string(), // Too short
             email: "test@example.com".to_string(),
             password: "securepassword123".to_string(),
         };
@@ -161,7 +161,7 @@ mod tests {
         let invalid_password = RegisterRequest {
             username: "testuser".to_string(),
             email: "test@example.com".to_string(),
-            password: "short".to_string(),  // Too short
+            password: "short".to_string(), // Too short
         };
         assert!(invalid_password.validate().is_err());
     }

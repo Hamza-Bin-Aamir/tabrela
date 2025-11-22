@@ -1,6 +1,6 @@
 use crate::models::{Claims, TokenType};
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use chrono::Utc;
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use std::fmt;
 
 #[derive(Debug)]
@@ -36,11 +36,7 @@ impl JwtService {
     }
 
     /// Create an access token
-    pub fn create_access_token(
-        &self,
-        user_id: &str,
-        username: &str,
-    ) -> Result<String, JwtError> {
+    pub fn create_access_token(&self, user_id: &str, username: &str) -> Result<String, JwtError> {
         let now = Utc::now().timestamp();
         let expires_at = now + self.access_token_expiry;
 
@@ -62,11 +58,7 @@ impl JwtService {
     }
 
     /// Create a refresh token
-    pub fn create_refresh_token(
-        &self,
-        user_id: &str,
-        username: &str,
-    ) -> Result<String, JwtError> {
+    pub fn create_refresh_token(&self, user_id: &str, username: &str) -> Result<String, JwtError> {
         let now = Utc::now().timestamp();
         let expires_at = now + self.refresh_token_expiry;
 
@@ -103,7 +95,7 @@ impl JwtService {
     /// Validate that the token is an access token
     pub fn validate_access_token(&self, token: &str) -> Result<Claims, JwtError> {
         let claims = self.validate_token(token)?;
-        
+
         if claims.token_type != TokenType::Access {
             return Err(JwtError::TokenValidationError(
                 "Token is not an access token".to_string(),
@@ -116,7 +108,7 @@ impl JwtService {
     /// Validate that the token is a refresh token
     pub fn validate_refresh_token(&self, token: &str) -> Result<Claims, JwtError> {
         let claims = self.validate_token(token)?;
-        
+
         if claims.token_type != TokenType::Refresh {
             return Err(JwtError::TokenValidationError(
                 "Token is not a refresh token".to_string(),
@@ -143,7 +135,7 @@ mod tests {
 
         let result = jwt_service.create_access_token(user_id, username);
         assert!(result.is_ok());
-        
+
         let token = result.unwrap();
         assert!(!token.is_empty());
     }
@@ -156,7 +148,7 @@ mod tests {
 
         let result = jwt_service.create_refresh_token(user_id, username);
         assert!(result.is_ok());
-        
+
         let token = result.unwrap();
         assert!(!token.is_empty());
     }
@@ -169,9 +161,9 @@ mod tests {
 
         let token = jwt_service.create_access_token(user_id, username).unwrap();
         let result = jwt_service.validate_token(&token);
-        
+
         assert!(result.is_ok());
-        
+
         let claims = result.unwrap();
         assert_eq!(claims.sub, user_id);
         assert_eq!(claims.username, username);
@@ -186,7 +178,7 @@ mod tests {
 
         let token = jwt_service.create_access_token(user_id, username).unwrap();
         let result = jwt_service.validate_access_token(&token);
-        
+
         assert!(result.is_ok());
     }
 
@@ -198,7 +190,7 @@ mod tests {
 
         let token = jwt_service.create_refresh_token(user_id, username).unwrap();
         let result = jwt_service.validate_refresh_token(&token);
-        
+
         assert!(result.is_ok());
     }
 
@@ -210,7 +202,7 @@ mod tests {
 
         let token = jwt_service.create_refresh_token(user_id, username).unwrap();
         let result = jwt_service.validate_access_token(&token);
-        
+
         assert!(result.is_err());
     }
 
@@ -222,7 +214,7 @@ mod tests {
 
         let token = jwt_service.create_access_token(user_id, username).unwrap();
         let result = jwt_service.validate_refresh_token(&token);
-        
+
         assert!(result.is_err());
     }
 
@@ -245,7 +237,7 @@ mod tests {
 
         let token = jwt_service1.create_access_token(user_id, username).unwrap();
         let result = jwt_service2.validate_token(&token);
-        
+
         assert!(result.is_err());
     }
 

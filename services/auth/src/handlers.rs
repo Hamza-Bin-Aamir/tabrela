@@ -3,11 +3,11 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use chrono::{Duration, Utc};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use uuid::Uuid;
 use validator::Validate;
-use chrono::{Duration, Utc};
 
 use crate::{
     csrf::create_csrf_token,
@@ -30,7 +30,7 @@ pub async fn register(
     })?;
 
     // Check if user already exists
-    if let Some(_) = state
+    if state
         .db
         .find_user_by_username(&payload.username)
         .await
@@ -40,6 +40,7 @@ pub async fn register(
                 Json(json!({"error": "Database error"})),
             )
         })?
+        .is_some()
     {
         return Err((
             StatusCode::CONFLICT,
@@ -48,7 +49,7 @@ pub async fn register(
     }
 
     // Check if email already exists
-    if let Some(_) = state
+    if state
         .db
         .find_user_by_email(&payload.email)
         .await
@@ -58,6 +59,7 @@ pub async fn register(
                 Json(json!({"error": "Database error"})),
             )
         })?
+        .is_some()
     {
         return Err((
             StatusCode::CONFLICT,
@@ -292,13 +294,15 @@ pub async fn refresh(
         })?;
 
     // Hash the refresh token to check against stored hash
-    let refresh_token_hash = security::hash_token(&payload.refresh_token, &state.config.password_pepper)
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to hash refresh token"})),
-            )
-        })?;
+    let refresh_token_hash =
+        security::hash_token(&payload.refresh_token, &state.config.password_pepper).map_err(
+            |_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "Failed to hash refresh token"})),
+                )
+            },
+        )?;
 
     // Verify refresh token exists in database
     let _stored_token = state
@@ -378,8 +382,8 @@ pub async fn refresh(
         })?;
 
     // Hash and store new refresh token
-    let new_refresh_token_hash = security::hash_token(&new_refresh_token, &state.config.password_pepper)
-        .map_err(|_| {
+    let new_refresh_token_hash =
+        security::hash_token(&new_refresh_token, &state.config.password_pepper).map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "Failed to hash refresh token"})),
@@ -469,10 +473,7 @@ pub async fn get_csrf_token(
             )
         })?;
 
-    Ok((
-        StatusCode::OK,
-        Json(json!({"csrf_token": csrf_token})),
-    ))
+    Ok((StatusCode::OK, Json(json!({"csrf_token": csrf_token}))))
 }
 
 #[cfg(test)]

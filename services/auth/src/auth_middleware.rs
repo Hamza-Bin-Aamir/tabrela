@@ -18,7 +18,7 @@ pub async fn auth_middleware(
     next: Next,
 ) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
     let headers = request.headers();
-    
+
     // Extract token from Authorization header
     let auth_header = headers
         .get("Authorization")
@@ -100,9 +100,9 @@ mod tests {
     fn test_extract_user_id() {
         let mut headers = HeaderMap::new();
         let user_id = Uuid::new_v4();
-        
+
         headers.insert("X-User-Id", user_id.to_string().parse().unwrap());
-        
+
         let extracted = extract_user_id(&headers);
         assert_eq!(extracted, Some(user_id));
     }
@@ -118,7 +118,7 @@ mod tests {
     fn test_extract_user_id_invalid() {
         let mut headers = HeaderMap::new();
         headers.insert("X-User-Id", "invalid-uuid".parse().unwrap());
-        
+
         let extracted = extract_user_id(&headers);
         assert_eq!(extracted, None);
     }

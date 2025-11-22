@@ -1,6 +1,5 @@
 /// System tests for the authentication microservice
 /// These tests validate the entire system end-to-end
-
 use reqwest::{Client, StatusCode};
 use serde_json::{json, Value};
 use std::time::Duration;
@@ -184,11 +183,11 @@ async fn test_system_complete_auth_flow() {
     let password = "securepassword123";
 
     let register_response = client.register(&username, &email, password).await.unwrap();
-    
+
     assert!(register_response["user"]["id"].is_string());
     assert_eq!(register_response["user"]["username"], username);
     assert_eq!(register_response["user"]["email"], email);
-    
+
     let initial_access_token = register_response["auth"]["access_token"].as_str().unwrap();
     let initial_refresh_token = register_response["auth"]["refresh_token"].as_str().unwrap();
     let csrf_token = register_response["csrf_token"].as_str().unwrap();
@@ -199,7 +198,10 @@ async fn test_system_complete_auth_flow() {
     assert_eq!(me_response["email"], email);
 
     // 3. Refresh the access token
-    let refresh_response = client.refresh_token(initial_refresh_token, csrf_token).await.unwrap();
+    let refresh_response = client
+        .refresh_token(initial_refresh_token, csrf_token)
+        .await
+        .unwrap();
     let new_access_token = refresh_response["access_token"].as_str().unwrap();
     let new_refresh_token = refresh_response["refresh_token"].as_str().unwrap();
 
@@ -235,7 +237,7 @@ async fn test_system_login_flow() {
 
     // 2. Login with the same credentials
     let login_response = client.login(&username, password).await.unwrap();
-    
+
     assert_eq!(login_response["user"]["username"], username);
     assert!(login_response["auth"]["access_token"].is_string());
     assert!(login_response["auth"]["refresh_token"].is_string());
@@ -260,11 +262,15 @@ async fn test_system_duplicate_registration() {
     client.register(&username, &email, password).await.unwrap();
 
     // Second registration with same username should fail
-    let duplicate = client.register(&username, &format!("other_{}", email), password).await;
+    let duplicate = client
+        .register(&username, &format!("other_{}", email), password)
+        .await;
     assert!(duplicate.is_err());
 
     // Registration with same email should also fail
-    let duplicate_email = client.register(&format!("other_{}", username), &email, password).await;
+    let duplicate_email = client
+        .register(&format!("other_{}", username), &email, password)
+        .await;
     assert!(duplicate_email.is_err());
 }
 

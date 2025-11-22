@@ -32,12 +32,9 @@ pub async fn csrf_protection_middleware(
     next: Next,
 ) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
     let method = request.method().clone();
-    
+
     // Only check CSRF for state-changing methods
-    if !matches!(
-        method.as_str(),
-        "POST" | "PUT" | "PATCH" | "DELETE"
-    ) {
+    if !matches!(method.as_str(), "POST" | "PUT" | "PATCH" | "DELETE") {
         return Ok(next.run(request).await);
     }
 
@@ -88,7 +85,8 @@ pub async fn create_csrf_token(
     expiry_seconds: i64,
 ) -> Result<String, sqlx::Error> {
     let token = generate_csrf_token();
-    db.create_csrf_token(&token, user_id, expiry_seconds).await?;
+    db.create_csrf_token(&token, user_id, expiry_seconds)
+        .await?;
     Ok(token)
 }
 
@@ -104,7 +102,7 @@ mod tests {
         assert_eq!(token1.len(), CSRF_TOKEN_LENGTH);
         assert_eq!(token2.len(), CSRF_TOKEN_LENGTH);
         assert_ne!(token1, token2); // Should generate different tokens
-        
+
         // Should only contain alphanumeric characters
         assert!(token1.chars().all(|c| c.is_alphanumeric()));
     }
@@ -113,7 +111,7 @@ mod tests {
     fn test_generate_csrf_token_uniqueness() {
         let tokens: Vec<String> = (0..100).map(|_| generate_csrf_token()).collect();
         let unique_tokens: std::collections::HashSet<_> = tokens.iter().collect();
-        
+
         // All tokens should be unique
         assert_eq!(tokens.len(), unique_tokens.len());
     }

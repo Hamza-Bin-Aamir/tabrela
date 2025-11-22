@@ -1,4 +1,4 @@
-use axum::http::{StatusCode, HeaderName, HeaderValue};
+use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum_test::TestServer;
 use serde_json::{json, Value};
 use sqlx::PgPool;
@@ -8,12 +8,12 @@ use uuid::Uuid;
 async fn create_test_server() -> TestServer {
     // Load environment variables from .env file
     dotenv::dotenv().ok();
-    
+
     // Use TEST_DATABASE_URL if set for tests, otherwise use existing DATABASE_URL
     if let Ok(test_db_url) = std::env::var("TEST_DATABASE_URL") {
         std::env::set_var("DATABASE_URL", test_db_url);
     }
-    
+
     // Only set test values for keys that aren't already set
     if std::env::var("JWT_SECRET").is_err() {
         std::env::set_var("JWT_SECRET", "test_secret_key_for_testing");
@@ -121,7 +121,10 @@ async fn test_register_duplicate_username() {
 
     assert_eq!(response.status_code(), StatusCode::CONFLICT);
     let body: Value = response.json();
-    assert!(body["error"].as_str().unwrap().contains("Username already exists"));
+    assert!(body["error"]
+        .as_str()
+        .unwrap()
+        .contains("Username already exists"));
 }
 
 #[tokio::test]
@@ -155,7 +158,10 @@ async fn test_register_duplicate_email() {
 
     assert_eq!(response.status_code(), StatusCode::CONFLICT);
     let body: Value = response.json();
-    assert!(body["error"].as_str().unwrap().contains("Email already exists"));
+    assert!(body["error"]
+        .as_str()
+        .unwrap()
+        .contains("Email already exists"));
 }
 
 #[tokio::test]
@@ -304,7 +310,10 @@ async fn test_refresh_token() {
     // Refresh token
     let response = server
         .post("/refresh")
-        .add_header(HeaderName::from_static("x-csrf-token"), HeaderValue::from_str(csrf_token).unwrap())
+        .add_header(
+            HeaderName::from_static("x-csrf-token"),
+            HeaderValue::from_str(csrf_token).unwrap(),
+        )
         .json(&json!({
             "refresh_token": refresh_token
         }))
@@ -338,7 +347,10 @@ async fn test_refresh_token_invalid() {
 
     let response = server
         .post("/refresh")
-        .add_header(HeaderName::from_static("x-csrf-token"), HeaderValue::from_str(csrf_token).unwrap())
+        .add_header(
+            HeaderName::from_static("x-csrf-token"),
+            HeaderValue::from_str(csrf_token).unwrap(),
+        )
         .json(&json!({
             "refresh_token": "invalid_token"
         }))
@@ -373,7 +385,7 @@ async fn test_me_endpoint() {
         .get("/me")
         .add_header(
             HeaderName::from_static("authorization"),
-            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap()
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
         )
         .await;
 
@@ -403,7 +415,7 @@ async fn test_me_endpoint_invalid_token() {
         .get("/me")
         .add_header(
             HeaderName::from_static("authorization"),
-            HeaderValue::from_static("Bearer invalid_token")
+            HeaderValue::from_static("Bearer invalid_token"),
         )
         .await;
 
@@ -437,11 +449,11 @@ async fn test_logout() {
         .post("/logout")
         .add_header(
             HeaderName::from_static("authorization"),
-            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap()
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
         )
         .add_header(
             HeaderName::from_static("x-csrf-token"),
-            HeaderValue::from_str(csrf_token).unwrap()
+            HeaderValue::from_str(csrf_token).unwrap(),
         )
         .await;
 
@@ -488,7 +500,7 @@ async fn test_csrf_protection() {
         .post("/logout")
         .add_header(
             HeaderName::from_static("authorization"),
-            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap()
+            HeaderValue::from_str(&format!("Bearer {}", access_token)).unwrap(),
         )
         .await;
 
