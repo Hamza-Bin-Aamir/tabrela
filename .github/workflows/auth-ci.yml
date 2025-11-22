@@ -144,7 +144,7 @@ jobs:
         run: cargo test --lib --verbose
       
       - name: Run integration tests
-        run: cargo test --test integration_test -- --ignored
+        run: cargo test --test integration -- --ignored
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
           JWT_SECRET: test-jwt-secret-for-ci-pipeline
