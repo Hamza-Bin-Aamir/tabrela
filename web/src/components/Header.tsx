@@ -11,9 +11,11 @@ export default function Header() {
     <header className="site-header" role="banner">
       <div className="container mx-auto px-6 flex items-center justify-between max-w-[1400px] h-full">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">T</span>
-          </div>
+          <img 
+            src="/logos/tabrela.png" 
+            alt="Tabrela Logo" 
+            className="header-logo"
+          />
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
             Tabrela
           </h1>
@@ -33,74 +35,17 @@ export default function Header() {
 
         {/* Desktop navigation - hidden on mobile */}
         <nav className="desktop-nav flex items-center gap-3" aria-label="Main navigation">
-          <Link 
-            to="/" 
-            className="nav-link"
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#d1d5db',
-              borderRadius: '0.5rem',
-              transition: 'all 0.2s',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#d1d5db';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
+          <Link to="/" className="nav-link">
             Home
           </Link>
-          <Link 
-            to="/loading" 
-            className="nav-link"
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#d1d5db',
-              borderRadius: '0.5rem',
-              transition: 'all 0.2s',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#d1d5db';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            Loading
+          <Link to="/about" className="nav-link">
+            About
           </Link>
-          <Link 
-            to="/error" 
-            className="nav-link"
-            style={{
-              padding: '0.5rem 1rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: '#d1d5db',
-              borderRadius: '0.5rem',
-              transition: 'all 0.2s',
-              textDecoration: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ffffff';
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#d1d5db';
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            Error
+          <Link to="/login" className="nav-link">
+            Log in
+          </Link>
+          <Link to="/signup" className="nav-link">
+            Sign up
           </Link>
         </nav>
 
@@ -117,18 +62,25 @@ export default function Header() {
             Home
           </Link>
           <Link 
-            to="/loading" 
+            to="/about" 
             className="mobile-nav-link"
             onClick={closeMenu}
           >
-            Loading
+            About
           </Link>
           <Link 
-            to="/error" 
+            to="/login" 
             className="mobile-nav-link"
             onClick={closeMenu}
           >
-            Error
+            Log in
+          </Link>
+          <Link 
+            to="/signup" 
+            className="mobile-nav-link"
+            onClick={closeMenu}
+          >
+            Sign up
           </Link>
         </nav>
 
