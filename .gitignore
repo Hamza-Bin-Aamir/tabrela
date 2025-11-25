@@ -63,3 +63,6 @@ coverage/
 
 # Documentation build
 target/doc/
+
+#logs
+logs/
