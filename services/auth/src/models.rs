@@ -62,7 +62,7 @@ pub struct RegisterRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequest {
     #[validate(length(min = 1))]
-    pub username_or_email: String,  // Changed to accept either username or email
+    pub username_or_email: String, // Changed to accept either username or email
     #[validate(length(min = 1))]
     pub password: String,
 }
@@ -171,9 +171,9 @@ mod tests {
             username: "testuser".to_string(),
             email: "test@example.com".to_string(),
             password: "securepassword123".to_string(),
-            reg_number: "2012345".to_string(),  // Valid format: 20XXXXX
-            year_joined: 2023,  // Valid year between 2000-2099
-            phone_number: "+923001234567".to_string(),  // Valid format with country code
+            reg_number: "2012345".to_string(), // Valid format: 20XXXXX
+            year_joined: 2023,                 // Valid year between 2000-2099
+            phone_number: "+923001234567".to_string(), // Valid format with country code
         };
         assert!(valid_request.validate().is_ok());
 
@@ -284,4 +284,3 @@ pub struct ResendVerificationRequest {
     #[validate(email)]
     pub email: String,
 }
-

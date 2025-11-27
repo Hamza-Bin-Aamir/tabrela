@@ -90,7 +90,7 @@ pub fn hash_token(token: &str, secret: &str) -> Result<String, SecurityError> {
 /// Generate a secure random token for email verification and password reset
 pub fn generate_token() -> String {
     use rand::Rng;
-    
+
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const TOKEN_LEN: usize = 64;
     let mut rng = rand::thread_rng();

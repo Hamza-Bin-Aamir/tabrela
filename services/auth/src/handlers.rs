@@ -12,8 +12,9 @@ use validator::{Validate, ValidationErrors};
 use crate::{
     csrf::create_csrf_token,
     models::{
-        AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest, RequestPasswordResetRequest,
-        ResendVerificationRequest, ResetPasswordRequest, UserResponse, VerifyEmailRequest,
+        AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest,
+        RequestPasswordResetRequest, ResendVerificationRequest, ResetPasswordRequest, UserResponse,
+        VerifyEmailRequest,
     },
     security::{self, hash_password, verify_password},
     AppState,
@@ -22,7 +23,7 @@ use crate::{
 /// Format validation errors into human-readable messages with expected formats
 fn format_validation_error(errors: &ValidationErrors) -> String {
     let mut messages = Vec::new();
-    
+
     for (field, field_errors) in errors.field_errors() {
         for error in field_errors {
             let message = match field {
@@ -43,7 +44,7 @@ fn format_validation_error(errors: &ValidationErrors) -> String {
             messages.push(message);
         }
     }
-    
+
     if messages.is_empty() {
         "Validation error".to_string()
     } else {
@@ -57,7 +58,7 @@ fn format_database_error(error: &sqlx::Error) -> String {
         sqlx::Error::Database(db_err) => {
             let constraint = db_err.constraint().unwrap_or("");
             let message = db_err.message();
-            
+
             // Check for constraint violations
             if constraint.contains("users_username_key") || message.contains("users_username_key") {
                 return "Username already exists. Please choose a different username.".to_string();
@@ -65,22 +66,28 @@ fn format_database_error(error: &sqlx::Error) -> String {
             if constraint.contains("users_email_key") || message.contains("users_email_key") {
                 return "Email already exists. Please use a different email address.".to_string();
             }
-            if constraint.contains("users_phone_number_unique") || message.contains("users_phone_number_unique") {
-                return "Phone number already exists. Please use a different phone number.".to_string();
+            if constraint.contains("users_phone_number_unique")
+                || message.contains("users_phone_number_unique")
+            {
+                return "Phone number already exists. Please use a different phone number."
+                    .to_string();
             }
-            if constraint.contains("users_reg_number_unique") || message.contains("users_reg_number_unique") {
+            if constraint.contains("users_reg_number_unique")
+                || message.contains("users_reg_number_unique")
+            {
                 return "Registration number already exists. Please check your registration number.".to_string();
             }
             if message.contains("year_joined") && message.contains("check") {
                 return "Year joined must be between 2000 and 2099. Expected format: 20XX (e.g., 2023)".to_string();
             }
             if message.contains("reg_number") && message.contains("check") {
-                return "Invalid registration number format. Expected: 20XXXXX (e.g., 2012345)".to_string();
+                return "Invalid registration number format. Expected: 20XXXXX (e.g., 2012345)"
+                    .to_string();
             }
             if message.contains("phone_number") && message.contains("check") {
                 return "Invalid phone number format. Expected: +[country code][number] (e.g., +923001234567)".to_string();
             }
-            
+
             "Database error occurred. Please try again.".to_string()
         }
         _ => "Database error occurred. Please try again.".to_string(),
@@ -134,16 +141,17 @@ pub async fn register(
     }
 
     // Check if email already exists
-    if let Some(existing_user) = state
-        .db
-        .find_user_by_email(&payload.email)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Database error"})),
-            )
-        })?
+    if let Some(existing_user) =
+        state
+            .db
+            .find_user_by_email(&payload.email)
+            .await
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "Database error"})),
+                )
+            })?
     {
         // If email exists and is verified, it's a conflict
         if existing_user.email_verified {
@@ -263,11 +271,7 @@ pub async fn register(
     let otp = security::generate_otp();
     state
         .db
-        .create_email_verification_otp(
-            user.id,
-            &otp,
-            state.config.email_verification_expiry,
-        )
+        .create_email_verification_otp(user.id, &otp, state.config.email_verification_expiry)
         .await
         .map_err(|_| {
             (
@@ -856,11 +860,7 @@ pub async fn resend_verification(
     let otp = security::generate_otp();
     state
         .db
-        .create_email_verification_otp(
-            user.id,
-            &otp,
-            state.config.email_verification_expiry,
-        )
+        .create_email_verification_otp(user.id, &otp, state.config.email_verification_expiry)
         .await
         .map_err(|_| {
             (
@@ -924,14 +924,14 @@ pub async fn request_password_reset(
 
     // Generate password reset OTP (6 digits, stored directly)
     let otp = security::generate_otp();
-    
+
     state
         .db
         .create_password_reset_otp(
-            user.id, 
+            user.id,
             &user.email,
-            &otp, 
-            state.config.password_reset_expiry
+            &otp,
+            state.config.password_reset_expiry,
         )
         .await
         .map_err(|_| {
@@ -1080,9 +1080,9 @@ mod tests {
             username: "testuser".to_string(),
             email: "test@example.com".to_string(),
             password: "securepassword123".to_string(),
-            reg_number: "2012345".to_string(),  // Valid format: 20XXXXX
-            year_joined: 2023,  // Valid year between 2000-2099
-            phone_number: "+923001234567".to_string(),  // Valid format with country code
+            reg_number: "2012345".to_string(), // Valid format: 20XXXXX
+            year_joined: 2023,                 // Valid year between 2000-2099
+            phone_number: "+923001234567".to_string(), // Valid format with country code
         };
         assert!(valid.validate().is_ok());
 

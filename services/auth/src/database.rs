@@ -95,7 +95,10 @@ impl Database {
     }
 
     /// Find a user by phone number - uses parameterized queries
-    pub async fn find_user_by_phone(&self, phone_number: &str) -> Result<Option<User>, sqlx::Error> {
+    pub async fn find_user_by_phone(
+        &self,
+        phone_number: &str,
+    ) -> Result<Option<User>, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
             SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
@@ -111,7 +114,10 @@ impl Database {
     }
 
     /// Find a user by registration number - uses parameterized queries
-    pub async fn find_user_by_reg_number(&self, reg_number: &str) -> Result<Option<User>, sqlx::Error> {
+    pub async fn find_user_by_reg_number(
+        &self,
+        reg_number: &str,
+    ) -> Result<Option<User>, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
             SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
@@ -385,11 +391,7 @@ impl Database {
     }
 
     /// Verify OTP and increment attempts
-    pub async fn verify_email_otp(
-        &self,
-        user_id: Uuid,
-        otp: &str,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn verify_email_otp(&self, user_id: Uuid, otp: &str) -> Result<bool, sqlx::Error> {
         // Get the OTP record
         let token = self.find_email_verification_otp_by_user(user_id).await?;
 
@@ -705,7 +707,15 @@ mod tests {
         let salt = "salt";
 
         let user = db
-            .create_user(&username, &email, password_hash, salt, "REG123", 2023, "1234567890")
+            .create_user(
+                &username,
+                &email,
+                password_hash,
+                salt,
+                "REG123",
+                2023,
+                "1234567890",
+            )
             .await
             .unwrap();
 
@@ -728,7 +738,15 @@ mod tests {
         let salt = "salt";
 
         let user = db
-            .create_user(&username, &email, password_hash, salt, "REG123", 2023, "1234567890")
+            .create_user(
+                &username,
+                &email,
+                password_hash,
+                salt,
+                "REG123",
+                2023,
+                "1234567890",
+            )
             .await
             .unwrap();
 
@@ -746,7 +764,15 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
+            .create_user(
+                &username,
+                &email,
+                "hash",
+                "salt",
+                "REG123",
+                2023,
+                "1234567890",
+            )
             .await
             .unwrap();
 
@@ -771,7 +797,15 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
+            .create_user(
+                &username,
+                &email,
+                "hash",
+                "salt",
+                "REG123",
+                2023,
+                "1234567890",
+            )
             .await
             .unwrap();
 
@@ -796,7 +830,15 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
+            .create_user(
+                &username,
+                &email,
+                "hash",
+                "salt",
+                "REG123",
+                2023,
+                "1234567890",
+            )
             .await
             .unwrap();
 

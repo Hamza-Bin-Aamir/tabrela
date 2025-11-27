@@ -59,9 +59,12 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         .route("/refresh", post(handlers::refresh))
         .route("/csrf-token", get(handlers::get_csrf_token))
         .route("/verify-email", post(handlers::verify_email))
-        .route("/verify-otp", post(handlers::verify_email))  // Alias for frontend compatibility
+        .route("/verify-otp", post(handlers::verify_email)) // Alias for frontend compatibility
         .route("/resend-verification", post(handlers::resend_verification))
-        .route("/request-password-reset", post(handlers::request_password_reset))
+        .route(
+            "/request-password-reset",
+            post(handlers::request_password_reset),
+        )
         .route("/reset-password", post(handlers::reset_password))
         .with_state(state.clone());
 
@@ -125,7 +128,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::OPTIONS,
             ])
             .allow_headers(Any)
-            .allow_credentials(false)  // Cannot use credentials with wildcard origin
+            .allow_credentials(false) // Cannot use credentials with wildcard origin
     } else {
         let mut cors_layer = CorsLayer::new().allow_origin(Any);
         for origin in &config.allowed_origins {

@@ -66,8 +66,8 @@ impl Config {
             .parse()
             .map_err(|_| "Invalid CSRF_TOKEN_EXPIRY")?;
 
-        let email_service_url = env::var("EMAIL_SERVICE_URL")
-            .unwrap_or_else(|_| "http://localhost:5000".to_string());
+        let email_service_url =
+            env::var("EMAIL_SERVICE_URL").unwrap_or_else(|_| "http://localhost:5000".to_string());
 
         let email_service_api_key =
             env::var("EMAIL_SERVICE_API_KEY").map_err(|_| "EMAIL_SERVICE_API_KEY must be set")?;
