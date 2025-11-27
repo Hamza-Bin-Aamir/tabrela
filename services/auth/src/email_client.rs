@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::error::Error;
 
 #[derive(Debug, Serialize)]
@@ -21,11 +21,11 @@ struct SendWelcomeEmailRequest {
     username: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct EmailResponse {
-    success: bool,
-    email_id: Option<String>,
-}
+// #[derive(Debug, Deserialize)]
+// struct EmailResponse {
+//     success: bool,
+//     email_id: Option<String>,
+// }
 
 pub struct EmailClient {
     base_url: String,

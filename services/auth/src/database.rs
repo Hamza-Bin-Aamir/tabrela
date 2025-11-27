@@ -783,7 +783,7 @@ mod tests {
         // Generate unique phone number
         let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
         let phone_number = format!("+92{:010}", phone_suffix);
-        
+
         let user = db
             .create_user(CreateUserParams {
                 username: &username,
@@ -823,7 +823,7 @@ mod tests {
         // Generate unique phone number
         let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
         let phone_number = format!("+92{:010}", phone_suffix);
-        
+
         let user = db
             .create_user(CreateUserParams {
                 username: &username,
@@ -863,7 +863,7 @@ mod tests {
         // Generate unique phone number
         let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
         let phone_number = format!("+92{:010}", phone_suffix);
-        
+
         let user = db
             .create_user(CreateUserParams {
                 username: &username,
