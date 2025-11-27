@@ -39,7 +39,7 @@ export class HttpClient {
     options: RequestInit = {}
   ): Promise<T> {
     const accessToken = TokenManager.getAccessToken();
-    const csrfToken = TokenManager.getCsrfToken();
+    let csrfToken = TokenManager.getCsrfToken();
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -48,6 +48,26 @@ export class HttpClient {
 
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // For non-GET requests, ensure we have a CSRF token
+    if (options.method !== 'GET' && !csrfToken && accessToken) {
+      try {
+        // Fetch CSRF token if we don't have one but are authenticated
+        const response = await fetch(`${API_BASE_URL}/csrf-token`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          TokenManager.updateCsrfToken(data.csrf_token);
+          csrfToken = data.csrf_token;
+        }
+      } catch (error) {
+        console.warn('Failed to fetch CSRF token:', error);
+      }
     }
 
     if (csrfToken && options.method !== 'GET') {

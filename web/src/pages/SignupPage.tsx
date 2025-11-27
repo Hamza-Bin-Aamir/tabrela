@@ -8,6 +8,9 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [regNumber, setRegNumber] = useState('');
+  const [yearJoined, setYearJoined] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -23,7 +26,7 @@ export default function SignupPage() {
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address');
+      setError('Invalid email format. Expected: user@example.com');
       return false;
     }
     if (password.length < 8) {
@@ -36,6 +39,19 @@ export default function SignupPage() {
     }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return false;
+    }
+    if (!/^20\d{5}$/.test(regNumber)) {
+      setError('Invalid registration number. Expected format: 20XXXXX (e.g., 2012345)');
+      return false;
+    }
+    const year = parseInt(yearJoined);
+    if (isNaN(year) || year < 2000 || year > 2099) {
+      setError('Year joined must be between 2000 and 2099. Expected format: 20XX (e.g., 2023)');
+      return false;
+    }
+    if (!/^\+\d{1,3}\d{9,15}$/.test(phoneNumber)) {
+      setError('Invalid phone number format. Expected: +[country code][number] (e.g., +923001234567)');
       return false;
     }
     return true;
@@ -52,8 +68,16 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      await register({ username, email, password });
-      navigate('/');
+      const result = await register({ 
+        username, 
+        email, 
+        password,
+        reg_number: regNumber,
+        year_joined: parseInt(yearJoined),
+        phone_number: phoneNumber
+      });
+      // Redirect to OTP verification page
+      navigate('/verify-otp', { state: { email: result.email } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -110,6 +134,63 @@ export default function SignupPage() {
                 placeholder="your.email@example.com"
                 disabled={isLoading}
               />
+            </div>
+
+            <div>
+              <label htmlFor="regNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                Registration Number
+              </label>
+              <input
+                id="regNumber"
+                type="text"
+                required
+                value={regNumber}
+                onChange={(e) => setRegNumber(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                placeholder="20XXXXX (e.g., 2012345)"
+                disabled={isLoading}
+                pattern="^20\d{5}$"
+                minLength={7}
+                maxLength={7}
+              />
+              <p className="mt-1 text-xs text-gray-500">Format: 20XXXXX (7 digits starting with 20)</p>
+            </div>
+
+            <div>
+              <label htmlFor="yearJoined" className="block text-sm font-medium text-gray-700 mb-2">
+                Year Joined DT
+              </label>
+              <input
+                id="yearJoined"
+                type="number"
+                required
+                value={yearJoined}
+                onChange={(e) => setYearJoined(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                placeholder="e.g., 2023"
+                disabled={isLoading}
+                min={2000}
+                max={2099}
+              />
+              <p className="mt-1 text-xs text-gray-500">Year between 2000 and 2099</p>
+            </div>
+
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                id="phoneNumber"
+                type="tel"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                placeholder="+923001234567"
+                disabled={isLoading}
+                pattern="^\+\d{1,3}\d{9,15}$"
+              />
+              <p className="mt-1 text-xs text-gray-500">Format: +[country code][number] (e.g., +923001234567)</p>
             </div>
 
             <div>

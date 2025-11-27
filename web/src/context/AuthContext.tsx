@@ -1,14 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { AuthService } from '../services/auth';
-import type { UserResponse, LoginRequest, RegisterRequest } from '../services/types';
+import type { UserResponse, LoginRequest, RegisterRequest, VerifyOtpRequest } from '../services/types';
 
 interface AuthContextType {
   user: UserResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<{ email: string; message: string }>;
+  verifyOtp: (data: VerifyOtpRequest) => Promise<void>;
+  resendOtp: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -28,8 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Failed to load user:', error);
-        // Clear invalid tokens
-        await AuthService.logout();
+        // Clear invalid tokens without calling logout endpoint
+        AuthService.clearLocalSession();
       } finally {
         setIsLoading(false);
       }
@@ -45,7 +47,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterRequest) => {
     const response = await AuthService.register(data);
+    // Registration no longer logs user in - they must verify email first
+    return { email: response.email, message: response.message };
+  };
+
+  const verifyOtp = async (data: VerifyOtpRequest) => {
+    const response = await AuthService.verifyOtp(data);
     setUser(response.user);
+  };
+
+  const resendOtp = async (email: string) => {
+    await AuthService.resendOtp({ email });
   };
 
   const logout = async () => {
@@ -61,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        verifyOtp,
+        resendOtp,
         logout,
       }}
     >

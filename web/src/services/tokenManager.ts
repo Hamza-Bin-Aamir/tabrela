@@ -45,4 +45,8 @@ export class TokenManager {
   static updateRefreshToken(refreshToken: string): void {
     localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
   }
+
+  static updateCsrfToken(csrfToken: string): void {
+    localStorage.setItem(this.CSRF_TOKEN_KEY, csrfToken);
+  }
 }
