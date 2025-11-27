@@ -1,0 +1,7 @@
+flask>=3.0.0
+flask-cors>=4.0.0
+resend>=0.8.0
+python-dotenv>=1.0.0
+gunicorn>=21.2.0
+pydantic>=2.0.0
+pydantic[email]>=2.0.0

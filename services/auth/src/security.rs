@@ -87,6 +87,30 @@ pub fn hash_token(token: &str, secret: &str) -> Result<String, SecurityError> {
     Ok(hex::encode(bytes))
 }
 
+/// Generate a secure random token for email verification and password reset
+pub fn generate_token() -> String {
+    use rand::Rng;
+
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const TOKEN_LEN: usize = 64;
+    let mut rng = rand::thread_rng();
+
+    (0..TOKEN_LEN)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}
+
+/// Generate a 6-digit OTP for email verification
+pub fn generate_otp() -> String {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let otp: u32 = rng.gen_range(100000..=999999);
+    otp.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

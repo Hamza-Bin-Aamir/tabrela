@@ -11,7 +11,9 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy manifests
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
+# Copy Cargo.lock if it exists (if not, cargo will generate it)
+COPY Cargo.loc[k] ./
 
 # Copy source code
 COPY src ./src

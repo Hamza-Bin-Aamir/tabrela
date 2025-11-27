@@ -1,8 +1,77 @@
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum_test::TestServer;
+use chrono::Utc;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use uuid::Uuid;
+
+// TODO: Login-related tests need to be updated for the new email verification flow
+// Users must now verify their email before they can log in
+// These tests should either:
+// 1. Include the full registration -> verify OTP -> login flow
+// 2. Use a helper function to create verified users directly in the database for testing
+
+/// Helper function to create a verified user directly in the database for testing
+/// This bypasses the normal registration + email verification flow
+async fn create_verified_user(
+    pool: &PgPool,
+    username: &str,
+    email: &str,
+    password: &str,
+    reg_number: &str,
+    year_joined: i32,
+    phone_number: &str,
+) -> Result<Uuid, Box<dyn std::error::Error>> {
+    // Use the same password hashing as the app
+    let password_pepper =
+        std::env::var("PASSWORD_PEPPER").unwrap_or_else(|_| "test_pepper".to_string());
+
+    // Use auth's hash_password function
+    let (password_hash, salt) = auth::security::hash_password(password, &password_pepper)
+        .map_err(|e| format!("Failed to hash password: {}", e))?;
+
+    let user_id = Uuid::new_v4();
+    let now = Utc::now();
+
+    sqlx::query(
+        r#"
+        INSERT INTO users (
+            id, username, email, password_hash, salt, 
+            reg_number, year_joined, phone_number, 
+            email_verified, email_verified_at, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, $10, $11)
+        "#,
+    )
+    .bind(user_id)
+    .bind(username)
+    .bind(email)
+    .bind(password_hash)
+    .bind(salt)
+    .bind(reg_number)
+    .bind(year_joined)
+    .bind(phone_number)
+    .bind(now)
+    .bind(now)
+    .bind(now)
+    .execute(pool)
+    .await?;
+
+    Ok(user_id)
+}
+
+/// Helper to get database pool from the app
+async fn get_database_pool() -> PgPool {
+    dotenv::dotenv().ok();
+
+    let database_url = std::env::var("TEST_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .expect("DATABASE_URL or TEST_DATABASE_URL must be set");
+
+    PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to database")
+}
 
 // Helper to create test server
 async fn create_test_server() -> TestServer {
@@ -75,19 +144,21 @@ async fn test_register_new_user() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "2012345",
+            "year_joined": 2023,
+            "phone_number": "+923001234567"
         }))
         .await;
 
     assert_eq!(response.status_code(), StatusCode::CREATED);
 
     let body: Value = response.json();
-    assert!(body["user"]["id"].is_string());
-    assert_eq!(body["user"]["username"], username);
-    assert_eq!(body["user"]["email"], email);
-    assert!(body["auth"]["access_token"].is_string());
-    assert!(body["auth"]["refresh_token"].is_string());
-    assert!(body["csrf_token"].is_string());
+    assert_eq!(
+        body["message"],
+        "Registration successful. Please check your email for the verification code."
+    );
+    assert_eq!(body["email"], email);
 }
 
 #[tokio::test]
@@ -98,33 +169,39 @@ async fn test_register_duplicate_username() {
     let username = format!("testuser_{}", Uuid::new_v4());
     let email1 = format!("test1_{}@example.com", Uuid::new_v4());
     let email2 = format!("test2_{}@example.com", Uuid::new_v4());
+    let reg_num1 = format!("20{:05}", rand::random::<u32>() % 100000);
+    let reg_num2 = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone1 = format!("+9230012{:05}", rand::random::<u32>() % 100000);
+    let phone2 = format!("+9230012{:05}", rand::random::<u32>() % 100000);
 
-    // Register first user
+    // Register first user (unverified)
     server
         .post("/register")
         .json(&json!({
             "username": username,
             "email": email1,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": reg_num1,
+            "year_joined": 2023,
+            "phone_number": phone1
         }))
         .await;
 
-    // Try to register with same username
+    // Try to register with same username but different email/phone/reg (should succeed and replace unverified user)
     let response = server
         .post("/register")
         .json(&json!({
             "username": username,
             "email": email2,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": reg_num2,
+            "year_joined": 2023,
+            "phone_number": phone2
         }))
         .await;
 
-    assert_eq!(response.status_code(), StatusCode::CONFLICT);
-    let body: Value = response.json();
-    assert!(body["error"]
-        .as_str()
-        .unwrap()
-        .contains("Username already exists"));
+    // Should succeed because first user was unverified
+    assert_eq!(response.status_code(), StatusCode::CREATED);
 }
 
 #[tokio::test]
@@ -135,33 +212,39 @@ async fn test_register_duplicate_email() {
     let username1 = format!("testuser1_{}", Uuid::new_v4());
     let username2 = format!("testuser2_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let reg_num1 = format!("20{:05}", rand::random::<u32>() % 100000);
+    let reg_num2 = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone1 = format!("+9230012{:05}", rand::random::<u32>() % 100000);
+    let phone2 = format!("+9230012{:05}", rand::random::<u32>() % 100000);
 
-    // Register first user
+    // Register first user (unverified)
     server
         .post("/register")
         .json(&json!({
             "username": username1,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": reg_num1,
+            "year_joined": 2023,
+            "phone_number": phone1
         }))
         .await;
 
-    // Try to register with same email
+    // Try to register with same email (should succeed and replace unverified user)
     let response = server
         .post("/register")
         .json(&json!({
             "username": username2,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": reg_num2,
+            "year_joined": 2023,
+            "phone_number": phone2
         }))
         .await;
 
-    assert_eq!(response.status_code(), StatusCode::CONFLICT);
-    let body: Value = response.json();
-    assert!(body["error"]
-        .as_str()
-        .unwrap()
-        .contains("Email already exists"));
+    // Should succeed because first user was unverified
+    assert_eq!(response.status_code(), StatusCode::CREATED);
 }
 
 #[tokio::test]
@@ -174,7 +257,10 @@ async fn test_register_invalid_email() {
         .json(&json!({
             "username": "testuser",
             "email": "invalid-email",
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "2012345",
+            "year_joined": 2023,
+            "phone_number": "+923001234567"
         }))
         .await;
 
@@ -191,7 +277,10 @@ async fn test_register_short_password() {
         .json(&json!({
             "username": "testuser",
             "email": "test@example.com",
-            "password": "short"
+            "password": "short",
+            "reg_number": "2012345",
+            "year_joined": 2023,
+            "phone_number": "+923001234567"
         }))
         .await;
 
@@ -202,26 +291,32 @@ async fn test_register_short_password() {
 #[ignore]
 async fn test_login_success() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
     let password = "securepassword123";
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
 
-    // Register user
-    server
-        .post("/register")
-        .json(&json!({
-            "username": username,
-            "email": email,
-            "password": password
-        }))
-        .await;
+    // Create a verified user directly in the database
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        password,
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
 
-    // Login
+    // Login with username
     let response = server
         .post("/login")
         .json(&json!({
-            "username": username,
+            "username_or_email": username,
             "password": password
         }))
         .await;
@@ -239,25 +334,31 @@ async fn test_login_success() {
 #[ignore]
 async fn test_login_wrong_password() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
 
-    // Register user
-    server
-        .post("/register")
-        .json(&json!({
-            "username": username,
-            "email": email,
-            "password": "correctpassword123"
-        }))
-        .await;
+    // Create a verified user with correct password
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        "correctpassword123",
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
 
     // Try to login with wrong password
     let response = server
         .post("/login")
         .json(&json!({
-            "username": username,
+            "username_or_email": username,
             "password": "wrongpassword123"
         }))
         .await;
@@ -273,8 +374,8 @@ async fn test_login_nonexistent_user() {
     let response = server
         .post("/login")
         .json(&json!({
-            "username": "nonexistentuser",
-            "password": "password123"
+            "username_or_email": "nonexistentuser",
+            "password": "somepassword123"
         }))
         .await;
 
@@ -285,27 +386,43 @@ async fn test_login_nonexistent_user() {
 #[ignore]
 async fn test_refresh_token() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let password = "securepassword123";
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
+
+    // Create a verified user
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        password,
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
 
     // Get CSRF token
     let csrf_response = server.get("/csrf-token").await;
     let csrf_body: Value = csrf_response.json();
     let csrf_token = csrf_body["csrf_token"].as_str().unwrap();
 
-    // Register user
-    let register_response = server
-        .post("/register")
+    // Login to get tokens
+    let login_response = server
+        .post("/login")
         .json(&json!({
-            "username": username,
-            "email": email,
-            "password": "securepassword123"
+            "username_or_email": username,
+            "password": password
         }))
         .await;
 
-    let register_body: Value = register_response.json();
-    let refresh_token = register_body["auth"]["refresh_token"].as_str().unwrap();
+    let login_body: Value = login_response.json();
+    let refresh_token = login_body["auth"]["refresh_token"].as_str().unwrap();
 
     // Refresh token
     let response = server
@@ -363,22 +480,38 @@ async fn test_refresh_token_invalid() {
 #[ignore]
 async fn test_me_endpoint() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let password = "securepassword123";
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
 
-    // Register user
-    let register_response = server
-        .post("/register")
+    // Create a verified user
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        password,
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
+
+    // Login to get access token
+    let login_response = server
+        .post("/login")
         .json(&json!({
-            "username": username,
-            "email": email,
-            "password": "securepassword123"
+            "username_or_email": username,
+            "password": password
         }))
         .await;
 
-    let register_body: Value = register_response.json();
-    let access_token = register_body["auth"]["access_token"].as_str().unwrap();
+    let login_body: Value = login_response.json();
+    let access_token = login_body["auth"]["access_token"].as_str().unwrap();
 
     // Get user info
     let response = server
@@ -426,23 +559,39 @@ async fn test_me_endpoint_invalid_token() {
 #[ignore]
 async fn test_logout() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let password = "securepassword123";
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
 
-    // Register user
-    let register_response = server
-        .post("/register")
+    // Create a verified user
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        password,
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
+
+    // Login to get tokens
+    let login_response = server
+        .post("/login")
         .json(&json!({
-            "username": username,
-            "email": email,
-            "password": "securepassword123"
+            "username_or_email": username,
+            "password": password
         }))
         .await;
 
-    let register_body: Value = register_response.json();
-    let access_token = register_body["auth"]["access_token"].as_str().unwrap();
-    let csrf_token = register_body["csrf_token"].as_str().unwrap();
+    let login_body: Value = login_response.json();
+    let access_token = login_body["auth"]["access_token"].as_str().unwrap();
+    let csrf_token = login_body["csrf_token"].as_str().unwrap();
 
     // Logout
     let response = server
@@ -478,22 +627,38 @@ async fn test_csrf_token_endpoint() {
 #[ignore]
 async fn test_csrf_protection() {
     let server = create_test_server().await;
+    let pool = get_database_pool().await;
 
     let username = format!("testuser_{}", Uuid::new_v4());
     let email = format!("test_{}@example.com", Uuid::new_v4());
+    let password = "securepassword123";
+    let reg_number = format!("20{:05}", rand::random::<u32>() % 100000);
+    let phone_number = format!("+9230{:08}", rand::random::<u32>() % 100000000);
 
-    // Register user
-    let register_response = server
-        .post("/register")
+    // Create a verified user
+    create_verified_user(
+        &pool,
+        &username,
+        &email,
+        password,
+        &reg_number,
+        2023,
+        &phone_number,
+    )
+    .await
+    .expect("Failed to create verified user");
+
+    // Login to get tokens
+    let login_response = server
+        .post("/login")
         .json(&json!({
-            "username": username,
-            "email": email,
-            "password": "securepassword123"
+            "username_or_email": username,
+            "password": password
         }))
         .await;
 
-    let register_body: Value = register_response.json();
-    let access_token = register_body["auth"]["access_token"].as_str().unwrap();
+    let login_body: Value = login_response.json();
+    let access_token = login_body["auth"]["access_token"].as_str().unwrap();
 
     // Try to logout without CSRF token
     let response = server

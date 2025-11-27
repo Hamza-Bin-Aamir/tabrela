@@ -22,11 +22,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+package-lock.json
 .env
 
 # Rust
 target/
-Cargo.lock
+# Note: Cargo.lock should be tracked for binary/application projects
+# but ignored for libraries. Our services are binaries, so we track Cargo.lock
+# Cargo.lock  # Commented out - we track this for reproducible builds
 **/*.rs.bk
 *.pdb
 
@@ -60,3 +63,8 @@ coverage/
 
 # Documentation build
 target/doc/
+
+#logs
+logs/
+
+.cargo/

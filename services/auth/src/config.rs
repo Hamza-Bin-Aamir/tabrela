@@ -12,6 +12,10 @@ pub struct Config {
     pub allowed_origins: Vec<String>,
     pub cors_strict_mode: bool,
     pub csrf_token_expiry: i64,
+    pub email_service_url: String,
+    pub email_service_api_key: String,
+    pub email_verification_expiry: i64,
+    pub password_reset_expiry: i64,
 }
 
 impl Config {
@@ -62,6 +66,22 @@ impl Config {
             .parse()
             .map_err(|_| "Invalid CSRF_TOKEN_EXPIRY")?;
 
+        let email_service_url =
+            env::var("EMAIL_SERVICE_URL").unwrap_or_else(|_| "http://localhost:5000".to_string());
+
+        let email_service_api_key =
+            env::var("EMAIL_SERVICE_API_KEY").map_err(|_| "EMAIL_SERVICE_API_KEY must be set")?;
+
+        let email_verification_expiry = env::var("EMAIL_VERIFICATION_EXPIRY")
+            .unwrap_or_else(|_| "86400".to_string()) // 24 hours
+            .parse()
+            .map_err(|_| "Invalid EMAIL_VERIFICATION_EXPIRY")?;
+
+        let password_reset_expiry = env::var("PASSWORD_RESET_EXPIRY")
+            .unwrap_or_else(|_| "3600".to_string()) // 1 hour
+            .parse()
+            .map_err(|_| "Invalid PASSWORD_RESET_EXPIRY")?;
+
         Ok(Config {
             host,
             port,
@@ -73,6 +93,10 @@ impl Config {
             allowed_origins,
             cors_strict_mode,
             csrf_token_expiry,
+            email_service_url,
+            email_service_api_key,
+            email_verification_expiry,
+            password_reset_expiry,
         })
     }
 }
