@@ -40,7 +40,15 @@ pub async fn csrf_protection_middleware(
 
     // Skip CSRF check for login and register endpoints
     let path = request.uri().path();
-    if path.ends_with("/register") || path.ends_with("/login") {
+    if path.ends_with("/register") 
+        || path.ends_with("/login")
+        || path.ends_with("/verify-email")
+        || path.ends_with("/verify-otp")
+        || path.ends_with("/resend-verification")
+        || path.ends_with("/request-password-reset")
+        || path.ends_with("/reset-password")
+        || path.ends_with("/csrf-token")
+    {
         return Ok(next.run(request).await);
     }
 

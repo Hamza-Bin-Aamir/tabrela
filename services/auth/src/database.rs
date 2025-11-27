@@ -1,4 +1,4 @@
-use crate::models::{CsrfToken, RefreshToken, User};
+use crate::models::{CsrfToken, EmailVerificationToken, PasswordResetToken, RefreshToken, User};
 use chrono::{DateTime, Duration, Utc};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use uuid::Uuid;
@@ -35,12 +35,15 @@ impl Database {
         email: &str,
         password_hash: &str,
         salt: &str,
+        reg_number: &str,
+        year_joined: i32,
+        phone_number: &str,
     ) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
-            INSERT INTO users (id, username, email, password_hash, salt, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, username, email, password_hash, salt, created_at, updated_at
+            INSERT INTO users (id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false, $9, $10)
+            RETURNING id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
             "#,
         )
         .bind(Uuid::new_v4())
@@ -48,6 +51,9 @@ impl Database {
         .bind(email)
         .bind(password_hash)
         .bind(salt)
+        .bind(reg_number)
+        .bind(year_joined)
+        .bind(phone_number)
         .bind(Utc::now())
         .bind(Utc::now())
         .fetch_one(&self.pool)
@@ -60,7 +66,7 @@ impl Database {
     pub async fn find_user_by_username(&self, username: &str) -> Result<Option<User>, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
-            SELECT id, username, email, password_hash, salt, created_at, updated_at
+            SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
             FROM users
             WHERE username = $1
             "#,
@@ -76,7 +82,7 @@ impl Database {
     pub async fn find_user_by_email(&self, email: &str) -> Result<Option<User>, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
-            SELECT id, username, email, password_hash, salt, created_at, updated_at
+            SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
             FROM users
             WHERE email = $1
             "#,
@@ -88,11 +94,43 @@ impl Database {
         Ok(user)
     }
 
+    /// Find a user by phone number - uses parameterized queries
+    pub async fn find_user_by_phone(&self, phone_number: &str) -> Result<Option<User>, sqlx::Error> {
+        let user = sqlx::query_as::<_, User>(
+            r#"
+            SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
+            FROM users
+            WHERE phone_number = $1
+            "#,
+        )
+        .bind(phone_number)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(user)
+    }
+
+    /// Find a user by registration number - uses parameterized queries
+    pub async fn find_user_by_reg_number(&self, reg_number: &str) -> Result<Option<User>, sqlx::Error> {
+        let user = sqlx::query_as::<_, User>(
+            r#"
+            SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
+            FROM users
+            WHERE reg_number = $1
+            "#,
+        )
+        .bind(reg_number)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(user)
+    }
+
     /// Find a user by ID - uses parameterized queries
     pub async fn find_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
-            SELECT id, username, email, password_hash, salt, created_at, updated_at
+            SELECT id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, email_verified_at, created_at, updated_at
             FROM users
             WHERE id = $1
             "#,
@@ -102,6 +140,21 @@ impl Database {
         .await?;
 
         Ok(user)
+    }
+
+    /// Delete a user by ID (for cleaning up unverified registrations)
+    pub async fn delete_user_by_id(&self, user_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM users
+            WHERE id = $1
+            "#,
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 
     /// Store a refresh token - uses parameterized queries
@@ -269,6 +322,359 @@ impl Database {
     }
 }
 
+// Email verification and password reset methods
+impl Database {
+    /// Create or update an email verification OTP
+    pub async fn create_email_verification_otp(
+        &self,
+        user_id: Uuid,
+        otp: &str,
+        expiry_seconds: i64,
+    ) -> Result<EmailVerificationToken, sqlx::Error> {
+        let expires_at = Utc::now() + Duration::seconds(expiry_seconds);
+
+        // Delete any existing OTP for this user
+        sqlx::query(
+            r#"
+            DELETE FROM email_verification_tokens
+            WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        // Create new OTP
+        let verification_token = sqlx::query_as::<_, EmailVerificationToken>(
+            r#"
+            INSERT INTO email_verification_tokens (id, user_id, otp, attempts, expires_at, created_at, last_sent_at)
+            VALUES ($1, $2, $3, 0, $4, $5, $6)
+            RETURNING id, user_id, otp, attempts, expires_at, created_at, last_sent_at
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(user_id)
+        .bind(otp)
+        .bind(expires_at)
+        .bind(Utc::now())
+        .bind(Utc::now())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(verification_token)
+    }
+
+    /// Find an email verification OTP by user_id
+    pub async fn find_email_verification_otp_by_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Option<EmailVerificationToken>, sqlx::Error> {
+        let verification_token = sqlx::query_as::<_, EmailVerificationToken>(
+            r#"
+            SELECT id, user_id, otp, attempts, expires_at, created_at, last_sent_at
+            FROM email_verification_tokens
+            WHERE user_id = $1 AND expires_at > $2
+            "#,
+        )
+        .bind(user_id)
+        .bind(Utc::now())
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(verification_token)
+    }
+
+    /// Verify OTP and increment attempts
+    pub async fn verify_email_otp(
+        &self,
+        user_id: Uuid,
+        otp: &str,
+    ) -> Result<bool, sqlx::Error> {
+        // Get the OTP record
+        let token = self.find_email_verification_otp_by_user(user_id).await?;
+
+        match token {
+            Some(token) => {
+                if token.attempts >= 5 {
+                    // Too many attempts
+                    return Ok(false);
+                }
+
+                if token.otp == otp {
+                    // Correct OTP - mark email as verified and delete token
+                    sqlx::query(
+                        r#"
+                        UPDATE users
+                        SET email_verified = true, email_verified_at = $1
+                        WHERE id = $2
+                        "#,
+                    )
+                    .bind(Utc::now())
+                    .bind(user_id)
+                    .execute(&self.pool)
+                    .await?;
+
+                    sqlx::query(
+                        r#"
+                        DELETE FROM email_verification_tokens
+                        WHERE user_id = $1
+                        "#,
+                    )
+                    .bind(user_id)
+                    .execute(&self.pool)
+                    .await?;
+
+                    Ok(true)
+                } else {
+                    // Incorrect OTP - increment attempts
+                    sqlx::query(
+                        r#"
+                        UPDATE email_verification_tokens
+                        SET attempts = attempts + 1
+                        WHERE user_id = $1
+                        "#,
+                    )
+                    .bind(user_id)
+                    .execute(&self.pool)
+                    .await?;
+
+                    Ok(false)
+                }
+            }
+            None => Ok(false),
+        }
+    }
+
+    /// Delete email verification token by user_id
+    pub async fn delete_email_verification_token_by_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM email_verification_tokens
+            WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Legacy method - kept for backwards compatibility with password reset
+    pub async fn find_email_verification_token(
+        &self,
+        token: &str,
+    ) -> Result<Option<EmailVerificationToken>, sqlx::Error> {
+        // This is now only used for password reset, but keeping the signature
+        let verification_token = sqlx::query_as::<_, EmailVerificationToken>(
+            r#"
+            SELECT id, user_id, otp as token, attempts, expires_at, created_at, last_sent_at
+            FROM email_verification_tokens
+            WHERE otp = $1 AND expires_at > $2
+            "#,
+        )
+        .bind(token)
+        .bind(Utc::now())
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(verification_token)
+    }
+
+    /// Legacy method - delete by token
+    pub async fn delete_email_verification_token(&self, token: &str) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM email_verification_tokens
+            WHERE otp = $1
+            "#,
+        )
+        .bind(token)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Delete all email verification tokens for a user
+    pub async fn delete_user_verification_tokens(&self, user_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM email_verification_tokens
+            WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Mark user email as verified
+    pub async fn verify_user_email(&self, user_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            UPDATE users
+            SET email_verified = true, email_verified_at = $1, updated_at = $2
+            WHERE id = $3
+            "#,
+        )
+        .bind(Utc::now())
+        .bind(Utc::now())
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Create or update a password reset OTP
+    pub async fn create_password_reset_otp(
+        &self,
+        user_id: Uuid,
+        email: &str,
+        otp_hash: &str,
+        expiry_seconds: i64,
+    ) -> Result<PasswordResetToken, sqlx::Error> {
+        let expires_at = Utc::now() + Duration::seconds(expiry_seconds);
+
+        // Delete any existing OTP for this email
+        sqlx::query("DELETE FROM password_reset_tokens WHERE email = $1")
+            .bind(email)
+            .execute(&self.pool)
+            .await?;
+
+        let reset_token = sqlx::query_as::<_, PasswordResetToken>(
+            r#"
+            INSERT INTO password_reset_tokens (id, user_id, email, otp, attempts, expires_at, created_at, last_sent_at, used)
+            VALUES ($1, $2, $3, $4, 0, $5, $6, $6, false)
+            RETURNING id, user_id, email, otp, attempts, expires_at, created_at, last_sent_at, used
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(user_id)
+        .bind(email)
+        .bind(otp_hash)
+        .bind(expires_at)
+        .bind(Utc::now())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(reset_token)
+    }
+
+    /// Find a password reset token by email
+    pub async fn find_password_reset_by_email(
+        &self,
+        email: &str,
+    ) -> Result<Option<PasswordResetToken>, sqlx::Error> {
+        let reset_token = sqlx::query_as::<_, PasswordResetToken>(
+            r#"
+            SELECT id, user_id, email, otp, attempts, expires_at, created_at, last_sent_at, used
+            FROM password_reset_tokens
+            WHERE email = $1 AND expires_at > $2 AND used = false
+            "#,
+        )
+        .bind(email)
+        .bind(Utc::now())
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(reset_token)
+    }
+
+    /// Increment OTP verification attempts
+    pub async fn increment_password_reset_attempts(&self, email: &str) -> Result<i32, sqlx::Error> {
+        let row: (i32,) = sqlx::query_as(
+            r#"
+            UPDATE password_reset_tokens
+            SET attempts = attempts + 1
+            WHERE email = $1
+            RETURNING attempts
+            "#,
+        )
+        .bind(email)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(row.0)
+    }
+
+    /// Mark a password reset token as used
+    pub async fn mark_password_reset_used(&self, email: &str) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            UPDATE password_reset_tokens
+            SET used = true
+            WHERE email = $1
+            "#,
+        )
+        .bind(email)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Update user password
+    pub async fn update_user_password(
+        &self,
+        user_id: Uuid,
+        password_hash: &str,
+        salt: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            UPDATE users
+            SET password_hash = $1, salt = $2, updated_at = $3
+            WHERE id = $4
+            "#,
+        )
+        .bind(password_hash)
+        .bind(salt)
+        .bind(Utc::now())
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Clean up expired email verification tokens
+    pub async fn cleanup_expired_verification_tokens(&self) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM email_verification_tokens
+            WHERE expires_at < $1
+            "#,
+        )
+        .bind(Utc::now())
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Clean up expired password reset tokens
+    pub async fn cleanup_expired_reset_tokens(&self) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM password_reset_tokens
+            WHERE expires_at < $1
+            "#,
+        )
+        .bind(Utc::now())
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -299,7 +705,7 @@ mod tests {
         let salt = "salt";
 
         let user = db
-            .create_user(&username, &email, password_hash, salt)
+            .create_user(&username, &email, password_hash, salt, "REG123", 2023, "1234567890")
             .await
             .unwrap();
 
@@ -322,7 +728,7 @@ mod tests {
         let salt = "salt";
 
         let user = db
-            .create_user(&username, &email, password_hash, salt)
+            .create_user(&username, &email, password_hash, salt, "REG123", 2023, "1234567890")
             .await
             .unwrap();
 
@@ -340,7 +746,7 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt")
+            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
             .await
             .unwrap();
 
@@ -365,7 +771,7 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt")
+            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
             .await
             .unwrap();
 
@@ -390,7 +796,7 @@ mod tests {
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let user = db
-            .create_user(&username, &email, "hash", "salt")
+            .create_user(&username, &email, "hash", "salt", "REG123", 2023, "1234567890")
             .await
             .unwrap();
 

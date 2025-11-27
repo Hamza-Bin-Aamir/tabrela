@@ -37,7 +37,10 @@ impl TestClient {
             .json(&json!({
                 "username": username,
                 "email": email,
-                "password": password
+                "password": password,
+                "reg_number": "REG123",
+                "year_joined": 2023,
+                "phone_number": "1234567890"
             }))
             .send()
             .await

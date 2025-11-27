@@ -75,7 +75,10 @@ async fn test_register_new_user() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -105,7 +108,10 @@ async fn test_register_duplicate_username() {
         .json(&json!({
             "username": username,
             "email": email1,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -115,7 +121,10 @@ async fn test_register_duplicate_username() {
         .json(&json!({
             "username": username,
             "email": email2,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -142,7 +151,10 @@ async fn test_register_duplicate_email() {
         .json(&json!({
             "username": username1,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -152,7 +164,10 @@ async fn test_register_duplicate_email() {
         .json(&json!({
             "username": username2,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -174,7 +189,10 @@ async fn test_register_invalid_email() {
         .json(&json!({
             "username": "testuser",
             "email": "invalid-email",
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -191,7 +209,10 @@ async fn test_register_short_password() {
         .json(&json!({
             "username": "testuser",
             "email": "test@example.com",
-            "password": "short"
+            "password": "short",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -213,7 +234,10 @@ async fn test_login_success() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": password
+            "password": password,
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -249,7 +273,10 @@ async fn test_login_wrong_password() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "correctpassword123"
+            "password": "correctpassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -300,7 +327,10 @@ async fn test_refresh_token() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -373,7 +403,10 @@ async fn test_me_endpoint() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -436,7 +469,10 @@ async fn test_logout() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
@@ -488,7 +524,10 @@ async fn test_csrf_protection() {
         .json(&json!({
             "username": username,
             "email": email,
-            "password": "securepassword123"
+            "password": "securepassword123",
+            "reg_number": "REG123",
+            "year_joined": 2023,
+            "phone_number": "1234567890"
         }))
         .await;
 
