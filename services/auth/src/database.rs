@@ -3,6 +3,17 @@ use chrono::{DateTime, Duration, Utc};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use uuid::Uuid;
 
+/// Parameters for creating a new user
+pub struct CreateUserParams<'a> {
+    pub username: &'a str,
+    pub email: &'a str,
+    pub password_hash: &'a str,
+    pub salt: &'a str,
+    pub reg_number: &'a str,
+    pub year_joined: i32,
+    pub phone_number: &'a str,
+}
+
 #[derive(Clone)]
 pub struct Database {
     pool: PgPool,
@@ -29,16 +40,7 @@ impl Database {
     }
 
     /// Create a new user - uses parameterized queries to prevent SQL injection
-    pub async fn create_user(
-        &self,
-        username: &str,
-        email: &str,
-        password_hash: &str,
-        salt: &str,
-        reg_number: &str,
-        year_joined: i32,
-        phone_number: &str,
-    ) -> Result<User, sqlx::Error> {
+    pub async fn create_user(&self, params: CreateUserParams<'_>) -> Result<User, sqlx::Error> {
         let user = sqlx::query_as::<_, User>(
             r#"
             INSERT INTO users (id, username, email, password_hash, salt, reg_number, year_joined, phone_number, email_verified, created_at, updated_at)
@@ -47,13 +49,13 @@ impl Database {
             "#,
         )
         .bind(Uuid::new_v4())
-        .bind(username)
-        .bind(email)
-        .bind(password_hash)
-        .bind(salt)
-        .bind(reg_number)
-        .bind(year_joined)
-        .bind(phone_number)
+        .bind(params.username)
+        .bind(params.email)
+        .bind(params.password_hash)
+        .bind(params.salt)
+        .bind(params.reg_number)
+        .bind(params.year_joined)
+        .bind(params.phone_number)
         .bind(Utc::now())
         .bind(Utc::now())
         .fetch_one(&self.pool)
@@ -705,17 +707,23 @@ mod tests {
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let password_hash = "hash";
         let salt = "salt";
+        // Generate unique reg_number (20 + 5 digits from random number)
+        let random_suffix: u32 = rand::random::<u32>() % 100000;
+        let reg_number = format!("20{:05}", random_suffix);
+        // Generate unique phone number
+        let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
+        let phone_number = format!("+92{:010}", phone_suffix);
 
         let user = db
-            .create_user(
-                &username,
-                &email,
+            .create_user(CreateUserParams {
+                username: &username,
+                email: &email,
                 password_hash,
                 salt,
-                "REG123",
-                2023,
-                "1234567890",
-            )
+                reg_number: &reg_number,
+                year_joined: 2023,
+                phone_number: &phone_number,
+            })
             .await
             .unwrap();
 
@@ -736,17 +744,23 @@ mod tests {
         let email = format!("test_{}@example.com", Uuid::new_v4());
         let password_hash = "hash";
         let salt = "salt";
+        // Generate unique reg_number (20 + 5 digits from random number)
+        let random_suffix: u32 = rand::random::<u32>() % 100000;
+        let reg_number = format!("20{:05}", random_suffix);
+        // Generate unique phone number
+        let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
+        let phone_number = format!("+92{:010}", phone_suffix);
 
         let user = db
-            .create_user(
-                &username,
-                &email,
+            .create_user(CreateUserParams {
+                username: &username,
+                email: &email,
                 password_hash,
                 salt,
-                "REG123",
-                2023,
-                "1234567890",
-            )
+                reg_number: &reg_number,
+                year_joined: 2023,
+                phone_number: &phone_number,
+            })
             .await
             .unwrap();
 
@@ -763,16 +777,23 @@ mod tests {
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
+        // Generate unique reg_number (20 + 5 digits from random number)
+        let random_suffix: u32 = rand::random::<u32>() % 100000;
+        let reg_number = format!("20{:05}", random_suffix);
+        // Generate unique phone number
+        let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
+        let phone_number = format!("+92{:010}", phone_suffix);
+        
         let user = db
-            .create_user(
-                &username,
-                &email,
-                "hash",
-                "salt",
-                "REG123",
-                2023,
-                "1234567890",
-            )
+            .create_user(CreateUserParams {
+                username: &username,
+                email: &email,
+                password_hash: "hash",
+                salt: "salt",
+                reg_number: &reg_number,
+                year_joined: 2023,
+                phone_number: &phone_number,
+            })
             .await
             .unwrap();
 
@@ -796,16 +817,23 @@ mod tests {
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
+        // Generate unique reg_number (20 + 5 digits from random number)
+        let random_suffix: u32 = rand::random::<u32>() % 100000;
+        let reg_number = format!("20{:05}", random_suffix);
+        // Generate unique phone number
+        let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
+        let phone_number = format!("+92{:010}", phone_suffix);
+        
         let user = db
-            .create_user(
-                &username,
-                &email,
-                "hash",
-                "salt",
-                "REG123",
-                2023,
-                "1234567890",
-            )
+            .create_user(CreateUserParams {
+                username: &username,
+                email: &email,
+                password_hash: "hash",
+                salt: "salt",
+                reg_number: &reg_number,
+                year_joined: 2023,
+                phone_number: &phone_number,
+            })
             .await
             .unwrap();
 
@@ -829,16 +857,23 @@ mod tests {
         // Create a user first to satisfy foreign key constraint
         let username = format!("testuser_{}", Uuid::new_v4());
         let email = format!("test_{}@example.com", Uuid::new_v4());
+        // Generate unique reg_number (20 + 5 digits from random number)
+        let random_suffix: u32 = rand::random::<u32>() % 100000;
+        let reg_number = format!("20{:05}", random_suffix);
+        // Generate unique phone number
+        let phone_suffix: u32 = rand::random::<u32>() % 1000000000;
+        let phone_number = format!("+92{:010}", phone_suffix);
+        
         let user = db
-            .create_user(
-                &username,
-                &email,
-                "hash",
-                "salt",
-                "REG123",
-                2023,
-                "1234567890",
-            )
+            .create_user(CreateUserParams {
+                username: &username,
+                email: &email,
+                password_hash: "hash",
+                salt: "salt",
+                reg_number: &reg_number,
+                year_joined: 2023,
+                phone_number: &phone_number,
+            })
             .await
             .unwrap();
 

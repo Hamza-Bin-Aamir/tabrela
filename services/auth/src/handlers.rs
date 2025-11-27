@@ -11,6 +11,7 @@ use validator::{Validate, ValidationErrors};
 
 use crate::{
     csrf::create_csrf_token,
+    database::CreateUserParams,
     models::{
         AuthResponse, LoginRequest, RefreshTokenRequest, RegisterRequest,
         RequestPasswordResetRequest, ResendVerificationRequest, ResetPasswordRequest, UserResponse,
@@ -250,15 +251,15 @@ pub async fn register(
     // Create user
     let user = state
         .db
-        .create_user(
-            &payload.username,
-            &payload.email,
-            &password_hash,
-            &salt,
-            &payload.reg_number,
-            payload.year_joined,
-            &payload.phone_number,
-        )
+        .create_user(CreateUserParams {
+            username: &payload.username,
+            email: &payload.email,
+            password_hash: &password_hash,
+            salt: &salt,
+            reg_number: &payload.reg_number,
+            year_joined: payload.year_joined,
+            phone_number: &payload.phone_number,
+        })
         .await
         .map_err(|e| {
             (
