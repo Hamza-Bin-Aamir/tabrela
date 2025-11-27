@@ -66,3 +66,5 @@ target/doc/
 
 #logs
 logs/
+
+.cargo/
