@@ -151,16 +151,12 @@ pub async fn admin_middleware(
         })?;
 
     // Check if user is an admin
-    let is_admin = state
-        .db
-        .is_user_admin(user_id)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Database error"})),
-            )
-        })?;
+    let is_admin = state.db.is_user_admin(user_id).await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
 
     if !is_admin {
         return Err((

@@ -769,7 +769,20 @@ impl Database {
         .await?;
 
         // Get users with admin status
-        let users = sqlx::query_as::<_, (Uuid, String, String, String, i32, String, bool, chrono::DateTime<Utc>, bool)>(
+        let users = sqlx::query_as::<
+            _,
+            (
+                Uuid,
+                String,
+                String,
+                String,
+                i32,
+                String,
+                bool,
+                chrono::DateTime<Utc>,
+                bool,
+            ),
+        >(
             r#"
             SELECT 
                 u.id, u.username, u.email, u.reg_number, u.year_joined, u.phone_number, 
@@ -788,8 +801,8 @@ impl Database {
 
         let user_responses: Vec<crate::models::UserListResponse> = users
             .into_iter()
-            .map(|(id, username, email, reg_number, year_joined, phone_number, email_verified, created_at, is_admin)| {
-                crate::models::UserListResponse {
+            .map(
+                |(
                     id,
                     username,
                     email,
@@ -797,10 +810,22 @@ impl Database {
                     year_joined,
                     phone_number,
                     email_verified,
-                    is_admin,
                     created_at,
-                }
-            })
+                    is_admin,
+                )| {
+                    crate::models::UserListResponse {
+                        id,
+                        username,
+                        email,
+                        reg_number,
+                        year_joined,
+                        phone_number,
+                        email_verified,
+                        is_admin,
+                        created_at,
+                    }
+                },
+            )
             .collect();
 
         Ok((user_responses, total.0))
