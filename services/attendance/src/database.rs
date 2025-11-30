@@ -138,11 +138,10 @@ impl Database {
                 (events, total.0)
             }
         } else if let Some(et) = event_type {
-            let total: (i64,) =
-                sqlx::query_as("SELECT COUNT(*) FROM events WHERE event_type = $1")
-                    .bind(et)
-                    .fetch_one(&self.pool)
-                    .await?;
+            let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM events WHERE event_type = $1")
+                .bind(et)
+                .fetch_one(&self.pool)
+                .await?;
 
             let events = sqlx::query_as::<_, Event>(
                 r#"
@@ -229,7 +228,11 @@ impl Database {
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn lock_event(&self, event_id: Uuid, is_locked: bool) -> Result<Option<Event>, sqlx::Error> {
+    pub async fn lock_event(
+        &self,
+        event_id: Uuid,
+        is_locked: bool,
+    ) -> Result<Option<Event>, sqlx::Error> {
         let event = sqlx::query_as::<_, Event>(
             r#"
             UPDATE events
@@ -377,10 +380,7 @@ impl Database {
         Ok(records)
     }
 
-    pub async fn get_attendance_stats(
-        &self,
-        event_id: Uuid,
-    ) -> Result<(i64, i64), sqlx::Error> {
+    pub async fn get_attendance_stats(&self, event_id: Uuid) -> Result<(i64, i64), sqlx::Error> {
         let available: (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM attendance_records WHERE event_id = $1 AND is_available = true",
         )
@@ -432,7 +432,9 @@ impl Database {
     }
 
     /// Get all attendance records for the matrix (returns event_id, user_id, is_available, is_checked_in)
-    pub async fn get_all_attendance_records(&self) -> Result<Vec<(Uuid, Uuid, bool, bool)>, sqlx::Error> {
+    pub async fn get_all_attendance_records(
+        &self,
+    ) -> Result<Vec<(Uuid, Uuid, bool, bool)>, sqlx::Error> {
         let records: Vec<(Uuid, Uuid, bool, bool)> = sqlx::query_as(
             r#"
             SELECT event_id, user_id, is_available, is_checked_in
@@ -464,7 +466,9 @@ impl Database {
     }
 
     /// Get user attendance stats
-    pub async fn get_user_attendance_stats(&self) -> Result<Vec<(Uuid, String, i64, i64)>, sqlx::Error> {
+    pub async fn get_user_attendance_stats(
+        &self,
+    ) -> Result<Vec<(Uuid, String, i64, i64)>, sqlx::Error> {
         let stats: Vec<(Uuid, String, i64, i64)> = sqlx::query_as(
             r#"
             SELECT 

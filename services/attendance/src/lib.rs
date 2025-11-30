@@ -36,9 +36,18 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
     let public_routes = Router::new()
         .route("/events", get(handlers::list_events))
         .route("/events/:event_id", get(handlers::get_event))
-        .route("/events/:event_id/attendance", get(handlers::get_event_attendance))
-        .route("/events/:event_id/my-attendance", get(handlers::get_my_attendance))
-        .route("/events/:event_id/availability", post(handlers::set_availability))
+        .route(
+            "/events/:event_id/attendance",
+            get(handlers::get_event_attendance),
+        )
+        .route(
+            "/events/:event_id/my-attendance",
+            get(handlers::get_my_attendance),
+        )
+        .route(
+            "/events/:event_id/availability",
+            post(handlers::set_availability),
+        )
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::auth_middleware,
@@ -52,7 +61,10 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         .route("/events/:event_id", delete(handlers::delete_event))
         .route("/events/:event_id/lock", post(handlers::lock_event))
         .route("/events/:event_id/check-in", post(handlers::check_in_user))
-        .route("/events/:event_id/revoke", post(handlers::revoke_availability))
+        .route(
+            "/events/:event_id/revoke",
+            post(handlers::revoke_availability),
+        )
         .route("/attendance/matrix", get(handlers::get_attendance_matrix))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
@@ -88,10 +100,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::DELETE,
                 http::Method::OPTIONS,
             ])
-            .allow_headers([
-                http::header::CONTENT_TYPE,
-                http::header::AUTHORIZATION,
-            ])
+            .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
             .allow_credentials(true)
     } else if config.allowed_origins.contains(&"*".to_string()) {
         CorsLayer::new()

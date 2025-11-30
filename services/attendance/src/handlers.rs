@@ -260,22 +260,15 @@ pub async fn get_event_attendance(
             )
         })?;
 
-    let records = state
-        .db
-        .get_event_attendance(event_id)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to fetch attendance"})),
-            )
-        })?;
+    let records = state.db.get_event_attendance(event_id).await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch attendance"})),
+        )
+    })?;
 
-    let (total_available, total_checked_in) = state
-        .db
-        .get_attendance_stats(event_id)
-        .await
-        .map_err(|_| {
+    let (total_available, total_checked_in) =
+        state.db.get_attendance_stats(event_id).await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({"error": "Failed to fetch attendance stats"})),
@@ -447,7 +440,12 @@ pub async fn check_in_user(
 
     let record = state
         .db
-        .check_in_user(event_id, payload.user_id, payload.is_checked_in, admin_user_id)
+        .check_in_user(
+            event_id,
+            payload.user_id,
+            payload.is_checked_in,
+            admin_user_id,
+        )
         .await
         .map_err(|e| {
             tracing::error!("Failed to check in user: {:?}", e);
@@ -549,53 +547,37 @@ pub async fn get_attendance_matrix(
     State(state): State<Arc<AppState>>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
     // Fetch all data in parallel-ish manner
-    let events = state
-        .db
-        .get_all_events_for_matrix()
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch events: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to fetch events"})),
-            )
-        })?;
+    let events = state.db.get_all_events_for_matrix().await.map_err(|e| {
+        tracing::error!("Failed to fetch events: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch events"})),
+        )
+    })?;
 
-    let users = state
-        .db
-        .get_all_users()
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch users: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to fetch users"})),
-            )
-        })?;
+    let users = state.db.get_all_users().await.map_err(|e| {
+        tracing::error!("Failed to fetch users: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch users"})),
+        )
+    })?;
 
-    let attendance_records = state
-        .db
-        .get_all_attendance_records()
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch attendance records: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to fetch attendance records"})),
-            )
-        })?;
+    let attendance_records = state.db.get_all_attendance_records().await.map_err(|e| {
+        tracing::error!("Failed to fetch attendance records: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch attendance records"})),
+        )
+    })?;
 
-    let event_type_stats = state
-        .db
-        .get_event_type_stats()
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to fetch event type stats: {:?}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Failed to fetch event type stats"})),
-            )
-        })?;
+    let event_type_stats = state.db.get_event_type_stats().await.map_err(|e| {
+        tracing::error!("Failed to fetch event type stats: {:?}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Failed to fetch event type stats"})),
+        )
+    })?;
 
     // Build lookup maps
     // Key: (event_id, user_id) -> (is_available, is_checked_in)
@@ -655,14 +637,15 @@ pub async fn get_attendance_matrix(
     let mut all_user_summaries: Vec<UserAttendanceSummary> = Vec::new();
 
     for (user_id, username) in &users {
-        let (events_available, events_checked_in) = user_stats.get(user_id).copied().unwrap_or((0, 0));
-        
+        let (events_available, events_checked_in) =
+            user_stats.get(user_id).copied().unwrap_or((0, 0));
+
         let availability_rate = if total_events > 0 {
             (events_available as f64 / total_events as f64) * 100.0
         } else {
             0.0
         };
-        
+
         let attendance_rate = if total_events > 0 {
             (events_checked_in as f64 / total_events as f64) * 100.0
         } else {
@@ -682,19 +665,17 @@ pub async fn get_attendance_matrix(
         // Build cells for this user (one per event)
         let cells: Vec<AttendanceCellStatus> = events
             .iter()
-            .map(|e| {
-                match attendance_map.get(&(e.id, *user_id)) {
-                    Some((is_available, is_checked_in)) => {
-                        if *is_checked_in {
-                            AttendanceCellStatus::CheckedIn
-                        } else if *is_available {
-                            AttendanceCellStatus::Available
-                        } else {
-                            AttendanceCellStatus::Unavailable
-                        }
+            .map(|e| match attendance_map.get(&(e.id, *user_id)) {
+                Some((is_available, is_checked_in)) => {
+                    if *is_checked_in {
+                        AttendanceCellStatus::CheckedIn
+                    } else if *is_available {
+                        AttendanceCellStatus::Available
+                    } else {
+                        AttendanceCellStatus::Unavailable
                     }
-                    None => AttendanceCellStatus::NoResponse,
                 }
+                None => AttendanceCellStatus::NoResponse,
             })
             .collect();
 
@@ -706,7 +687,12 @@ pub async fn get_attendance_matrix(
     }
 
     // Sort rows by attendance rate (descending)
-    rows.sort_by(|a, b| b.user.attendance_rate.partial_cmp(&a.user.attendance_rate).unwrap_or(std::cmp::Ordering::Equal));
+    rows.sort_by(|a, b| {
+        b.user
+            .attendance_rate
+            .partial_cmp(&a.user.attendance_rate)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     // Calculate aggregate statistics
     let total_availability_records: i64 = user_stats.values().map(|(a, _)| a).sum();
@@ -754,7 +740,11 @@ pub async fn get_attendance_matrix(
 
     // Get top 5 most reliable users (by attendance rate)
     let mut most_reliable_users = all_user_summaries.clone();
-    most_reliable_users.sort_by(|a, b| b.attendance_rate.partial_cmp(&a.attendance_rate).unwrap_or(std::cmp::Ordering::Equal));
+    most_reliable_users.sort_by(|a, b| {
+        b.attendance_rate
+            .partial_cmp(&a.attendance_rate)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     most_reliable_users.truncate(5);
 
     // Build event type stats
