@@ -72,10 +72,18 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
+              <Link to="/events" className="nav-link">
+                Events
+              </Link>
               {isAdmin && (
-                <Link to="/admin" className="nav-link">
-                  Admin
-                </Link>
+                <>
+                  <Link to="/attendance/dashboard" className="nav-link">
+                    Attendance
+                  </Link>
+                  <Link to="/admin" className="nav-link">
+                    Admin
+                  </Link>
+                </>
               )}
               <span className="nav-link cursor-default">
                 Hi, {user?.username}
@@ -117,14 +125,30 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
+              <Link 
+                to="/events" 
+                className="mobile-nav-link"
+                onClick={closeMenu}
+              >
+                Events
+              </Link>
               {isAdmin && (
-                <Link 
-                  to="/admin" 
-                  className="mobile-nav-link"
-                  onClick={closeMenu}
-                >
-                  Admin
-                </Link>
+                <>
+                  <Link 
+                    to="/attendance/dashboard" 
+                    className="mobile-nav-link"
+                    onClick={closeMenu}
+                  >
+                    Attendance
+                  </Link>
+                  <Link 
+                    to="/admin" 
+                    className="mobile-nav-link"
+                    onClick={closeMenu}
+                  >
+                    Admin
+                  </Link>
+                </>
               )}
               <span className="mobile-nav-link cursor-default">
                 Hi, {user?.username}

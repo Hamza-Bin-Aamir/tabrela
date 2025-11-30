@@ -74,6 +74,12 @@ if [ ! -f "services/email/.env" ]; then
     print_warning "Please edit services/email/.env with your configuration"
 fi
 
+if [ ! -f "services/attendance/.env" ]; then
+    print_warning "services/attendance/.env not found. Creating from .env.example..."
+    cp services/attendance/.env.example services/attendance/.env
+    print_warning "Please edit services/attendance/.env with your configuration"
+fi
+
 if [ ! -f "web/.env" ]; then
     print_warning "web/.env not found. Creating from .env.example..."
     if [ -f "web/.env.example" ]; then
@@ -89,6 +95,12 @@ print_info "Checking port availability..."
 if port_in_use 8081; then
     print_error "Port 8081 (Auth Service) is already in use"
     print_info "Please stop the process using: lsof -ti:8081 | xargs kill -9"
+    exit 1
+fi
+
+if port_in_use 8082; then
+    print_error "Port 8082 (Attendance Service) is already in use"
+    print_info "Please stop the process using: lsof -ti:8082 | xargs kill -9"
     exit 1
 fi
 
@@ -165,6 +177,15 @@ cd ../..
 echo $AUTH_PID > logs/auth-service.pid
 print_success "Auth Service started (PID: $AUTH_PID)"
 
+# Start Attendance Service
+print_info "Starting Attendance Service on port 8082..."
+cd services/attendance
+nohup cargo run --release > ../../logs/attendance-service.log 2>&1 &
+ATTENDANCE_PID=$!
+cd ../..
+echo $ATTENDANCE_PID > logs/attendance-service.pid
+print_success "Attendance Service started (PID: $ATTENDANCE_PID)"
+
 # Wait for auth service to be ready
 print_info "Waiting for services to initialize..."
 sleep 5
@@ -188,14 +209,16 @@ print_success "🚀 All services started successfully!"
 echo "======================================"
 echo ""
 echo -e "${GREEN}Services:${NC}"
-echo "  📧 Email Service:    http://localhost:5000 (PID: $EMAIL_PID)"
-echo "  🔐 Auth Service:     http://localhost:8081 (PID: $AUTH_PID)"
-echo "  🌐 Frontend:         http://localhost:5173 (PID: $FRONTEND_PID)"
+echo "  📧 Email Service:       http://localhost:5000 (PID: $EMAIL_PID)"
+echo "  🔐 Auth Service:        http://localhost:8081 (PID: $AUTH_PID)"
+echo "  📋 Attendance Service:  http://localhost:8082 (PID: $ATTENDANCE_PID)"
+echo "  🌐 Frontend:            http://localhost:5173 (PID: $FRONTEND_PID)"
 echo ""
 echo -e "${BLUE}Logs:${NC}"
-echo "  Email Service:  tail -f logs/email-service.log"
-echo "  Auth Service:   tail -f logs/auth-service.log"
-echo "  Frontend:       tail -f logs/frontend.log"
+echo "  Email Service:       tail -f logs/email-service.log"
+echo "  Auth Service:        tail -f logs/auth-service.log"
+echo "  Attendance Service:  tail -f logs/attendance-service.log"
+echo "  Frontend:            tail -f logs/frontend.log"
 echo ""
 echo -e "${YELLOW}To stop all services:${NC}"
 echo "  ./stop_dev.sh"
@@ -210,6 +233,9 @@ cleanup() {
     fi
     if [ -f logs/auth-service.pid ]; then
         kill $(cat logs/auth-service.pid) 2>/dev/null || true
+    fi
+    if [ -f logs/attendance-service.pid ]; then
+        kill $(cat logs/attendance-service.pid) 2>/dev/null || true
     fi
     if [ -f logs/frontend.pid ]; then
         kill $(cat logs/frontend.pid) 2>/dev/null || true

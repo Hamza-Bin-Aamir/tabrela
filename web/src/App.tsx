@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import AdminRoute from './components/AdminRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -19,6 +20,10 @@ import AccessibilityPage from './pages/AccessibilityPage'
 import LoadingPage from './pages/LoadingPage'
 import ErrorPage from './pages/ErrorPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import EventsPage from './pages/EventsPage'
+import EventDetailPage from './pages/EventDetailPage'
+import EventFormPage from './pages/EventFormPage'
+import AttendanceDashboardPage from './pages/AttendanceDashboardPage'
 import './App.css'
 
 function App() {
@@ -55,6 +60,47 @@ function App() {
                 element={
                   <AdminRoute>
                     <AdminDashboardPage />
+                  </AdminRoute>
+                }
+              />
+              {/* Event routes */}
+              <Route
+                path="/events"
+                element={
+                  <ProtectedRoute>
+                    <EventsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/create"
+                element={
+                  <AdminRoute>
+                    <EventFormPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/events/:eventId"
+                element={
+                  <ProtectedRoute>
+                    <EventDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/:eventId/edit"
+                element={
+                  <AdminRoute>
+                    <EventFormPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/attendance/dashboard"
+                element={
+                  <AdminRoute>
+                    <AttendanceDashboardPage />
                   </AdminRoute>
                 }
               />

@@ -5,11 +5,13 @@ on:
     branches: [ main, fix-docker-build ]
     paths:
       - 'services/auth/**'
+      - 'services/migrations/**'
       - '.github/workflows/auth-ci.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'services/auth/**'
+      - 'services/migrations/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -123,7 +125,7 @@ jobs:
           echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
       
       - name: Run migrations
-        run: sqlx migrate run
+        run: sqlx migrate run --source ../migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
       
@@ -181,7 +183,7 @@ jobs:
           echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
       
       - name: Run migrations
-        run: sqlx migrate run
+        run: sqlx migrate run --source ../migrations
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
       
@@ -238,41 +240,3 @@ jobs:
         with:
           name: auth-service
           path: services/auth/target/release/auth
-
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/mvp' || github.ref == 'refs/heads/fix-docker-build')
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        if: github.event_name != 'pull_request'
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/auth-service
-          tags: |
-            type=ref,event=branch
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-      
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/auth
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
