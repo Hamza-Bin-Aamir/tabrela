@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import AdminRoute from './components/AdminRoute'
 import Home from './pages/Home'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -17,6 +18,7 @@ import TermsPage from './pages/TermsPage'
 import AccessibilityPage from './pages/AccessibilityPage'
 import LoadingPage from './pages/LoadingPage'
 import ErrorPage from './pages/ErrorPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
 import './App.css'
 
 function App() {
@@ -47,6 +49,15 @@ function App() {
               <Route path="/accessibility" element={<AccessibilityPage />} />
               <Route path="/loading" element={<LoadingPage />} />
               <Route path="/error" element={<ErrorPage />} />
+              {/* Admin routes */}
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboardPage />
+                  </AdminRoute>
+                }
+              />
               {/* fallback to home */}
               <Route path="*" element={<Home />} />
             </Routes>

@@ -75,3 +75,32 @@ export interface ApiError {
   error: string;
   attempts_remaining?: number;
 }
+
+// Admin Types
+export interface AdminUserListItem {
+  id: string;
+  username: string;
+  email: string;
+  reg_number: string;
+  year_joined: number;
+  phone_number: string;
+  email_verified: boolean;
+  is_admin: boolean;
+  created_at: string;
+}
+
+export interface AdminListUsersResponse {
+  users: AdminUserListItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface PromoteToAdminRequest {
+  user_id: string;
+}
+
+export interface AdminCheckResponse {
+  is_admin: boolean;
+}

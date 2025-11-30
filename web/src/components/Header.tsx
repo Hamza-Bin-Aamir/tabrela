@@ -1,10 +1,28 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { AdminService } from '../services/admin'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, logout } = useAuth()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await AdminService.checkAdminStatus()
+          setIsAdmin(response.is_admin)
+        } catch {
+          setIsAdmin(false)
+        }
+      } else {
+        setIsAdmin(false)
+      }
+    }
+    checkAdmin()
+  }, [isAuthenticated])
 
   const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen)
   const closeMenu = () => setMobileMenuOpen(false)
@@ -54,6 +72,11 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
+              {isAdmin && (
+                <Link to="/admin" className="nav-link">
+                  Admin
+                </Link>
+              )}
               <span className="nav-link cursor-default">
                 Hi, {user?.username}
               </span>
@@ -94,6 +117,15 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="mobile-nav-link"
+                  onClick={closeMenu}
+                >
+                  Admin
+                </Link>
+              )}
               <span className="mobile-nav-link cursor-default">
                 Hi, {user?.username}
               </span>
