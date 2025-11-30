@@ -1071,6 +1071,191 @@ pub async fn reset_password(
     ))
 }
 
+// ============================================================================
+// Admin Handlers
+// ============================================================================
+
+/// Handler for listing all users (admin only)
+pub async fn admin_list_users(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(params): axum::extract::Query<ListUsersParams>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    let page = params.page.unwrap_or(1).max(1);
+    let per_page = params.per_page.unwrap_or(20).min(100).max(1);
+
+    let (users, total) = state
+        .db
+        .list_all_users(page, per_page)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to fetch users"})),
+            )
+        })?;
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({
+            "users": users,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": (total as f64 / per_page as f64).ceil() as i64
+        })),
+    ))
+}
+
+/// Handler for promoting a user to admin (admin only)
+pub async fn admin_promote_user(
+    State(state): State<Arc<AppState>>,
+    Extension(admin_user_id): Extension<Uuid>,
+    Json(payload): Json<crate::models::PromoteToAdminRequest>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    // Check if the target user exists
+    let target_user = state
+        .db
+        .find_user_by_id(payload.user_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error": "User not found"})),
+            )
+        })?;
+
+    // Check if user is already an admin
+    if state
+        .db
+        .is_user_admin(payload.user_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?
+    {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(json!({"error": "User is already an admin"})),
+        ));
+    }
+
+    // Promote user to admin
+    let admin_record = state
+        .db
+        .promote_to_admin(payload.user_id, admin_user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to promote user: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to promote user to admin"})),
+            )
+        })?;
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({
+            "message": "User promoted to admin successfully",
+            "admin": {
+                "id": admin_record.id,
+                "user_id": admin_record.user_id,
+                "username": target_user.username,
+                "granted_by": admin_record.granted_by,
+                "created_at": admin_record.created_at
+            }
+        })),
+    ))
+}
+
+/// Handler for demoting an admin (admin only)
+pub async fn admin_demote_user(
+    State(state): State<Arc<AppState>>,
+    Extension(admin_user_id): Extension<Uuid>,
+    Json(payload): Json<crate::models::PromoteToAdminRequest>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    // Prevent self-demotion
+    if payload.user_id == admin_user_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Cannot demote yourself"})),
+        ));
+    }
+
+    // Check if the target user is actually an admin
+    if !state
+        .db
+        .is_user_admin(payload.user_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?
+    {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User is not an admin"})),
+        ));
+    }
+
+    // Demote the admin
+    state
+        .db
+        .demote_admin(payload.user_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to demote admin: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to demote admin"})),
+            )
+        })?;
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({"message": "Admin privileges revoked successfully"})),
+    ))
+}
+
+/// Handler for checking if current user is admin
+pub async fn admin_check(
+    State(state): State<Arc<AppState>>,
+    Extension(user_id): Extension<Uuid>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    let is_admin = state
+        .db
+        .is_user_admin(user_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?;
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({"is_admin": is_admin})),
+    ))
+}
+
+/// Query parameters for listing users
+#[derive(Debug, serde::Deserialize)]
+pub struct ListUsersParams {
+    pub page: Option<i32>,
+    pub per_page: Option<i32>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

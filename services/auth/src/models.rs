@@ -284,3 +284,57 @@ pub struct ResendVerificationRequest {
     #[validate(email)]
     pub email: String,
 }
+
+// Admin-related models
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct AdminUser {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub granted_by: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminUserResponse {
+    pub id: Uuid,
+    pub user_id: Uuid,
+    pub granted_by: Option<Uuid>,
+    pub created_at: DateTime<Utc>,
+}
+
+impl From<AdminUser> for AdminUserResponse {
+    fn from(admin: AdminUser) -> Self {
+        AdminUserResponse {
+            id: admin.id,
+            user_id: admin.user_id,
+            granted_by: admin.granted_by,
+            created_at: admin.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserListResponse {
+    pub id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub reg_number: String,
+    pub year_joined: i32,
+    pub phone_number: String,
+    pub email_verified: bool,
+    pub is_admin: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct PromoteToAdminRequest {
+    pub user_id: Uuid,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminListUsersResponse {
+    pub users: Vec<UserListResponse>,
+    pub total: i64,
+    pub page: i32,
+    pub per_page: i32,
+}

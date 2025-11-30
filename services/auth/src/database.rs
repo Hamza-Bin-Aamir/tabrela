@@ -679,6 +679,149 @@ impl Database {
     }
 }
 
+// Admin-related methods
+impl Database {
+    /// Check if a user is an admin
+    pub async fn is_user_admin(&self, user_id: Uuid) -> Result<bool, sqlx::Error> {
+        let result = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*) FROM admin_users WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(result > 0)
+    }
+
+    /// Get admin record for a user
+    pub async fn get_admin_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Option<crate::models::AdminUser>, sqlx::Error> {
+        let admin = sqlx::query_as::<_, crate::models::AdminUser>(
+            r#"
+            SELECT id, user_id, granted_by, created_at
+            FROM admin_users
+            WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(admin)
+    }
+
+    /// Promote a user to admin
+    pub async fn promote_to_admin(
+        &self,
+        user_id: Uuid,
+        granted_by: Uuid,
+    ) -> Result<crate::models::AdminUser, sqlx::Error> {
+        let admin = sqlx::query_as::<_, crate::models::AdminUser>(
+            r#"
+            INSERT INTO admin_users (id, user_id, granted_by, created_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, user_id, granted_by, created_at
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(user_id)
+        .bind(granted_by)
+        .bind(Utc::now())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(admin)
+    }
+
+    /// Demote an admin (remove admin privileges)
+    pub async fn demote_admin(&self, user_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            r#"
+            DELETE FROM admin_users WHERE user_id = $1
+            "#,
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// List all users with pagination and admin status
+    pub async fn list_all_users(
+        &self,
+        page: i32,
+        per_page: i32,
+    ) -> Result<(Vec<crate::models::UserListResponse>, i64), sqlx::Error> {
+        let offset = (page - 1) * per_page;
+
+        // Get total count
+        let total: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(*) FROM users
+            "#,
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        // Get users with admin status
+        let users = sqlx::query_as::<_, (Uuid, String, String, String, i32, String, bool, chrono::DateTime<Utc>, bool)>(
+            r#"
+            SELECT 
+                u.id, u.username, u.email, u.reg_number, u.year_joined, u.phone_number, 
+                u.email_verified, u.created_at,
+                CASE WHEN a.user_id IS NOT NULL THEN true ELSE false END as is_admin
+            FROM users u
+            LEFT JOIN admin_users a ON u.id = a.user_id
+            ORDER BY u.created_at DESC
+            LIMIT $1 OFFSET $2
+            "#,
+        )
+        .bind(per_page as i64)
+        .bind(offset as i64)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let user_responses: Vec<crate::models::UserListResponse> = users
+            .into_iter()
+            .map(|(id, username, email, reg_number, year_joined, phone_number, email_verified, created_at, is_admin)| {
+                crate::models::UserListResponse {
+                    id,
+                    username,
+                    email,
+                    reg_number,
+                    year_joined,
+                    phone_number,
+                    email_verified,
+                    is_admin,
+                    created_at,
+                }
+            })
+            .collect();
+
+        Ok((user_responses, total.0))
+    }
+
+    /// Get all admin users
+    pub async fn list_all_admins(&self) -> Result<Vec<crate::models::AdminUser>, sqlx::Error> {
+        let admins = sqlx::query_as::<_, crate::models::AdminUser>(
+            r#"
+            SELECT id, user_id, granted_by, created_at
+            FROM admin_users
+            ORDER BY created_at DESC
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(admins)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
