@@ -71,15 +71,28 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
     let protected_routes = Router::new()
         .route("/logout", post(handlers::logout))
         .route("/me", get(handlers::me))
+        .route("/admin/check", get(handlers::admin_check))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::auth_middleware,
         ))
         .with_state(state.clone());
 
+    // Admin routes - require admin privileges
+    let admin_routes = Router::new()
+        .route("/admin/users", get(handlers::admin_list_users))
+        .route("/admin/promote", post(handlers::admin_promote_user))
+        .route("/admin/demote", post(handlers::admin_demote_user))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware::admin_middleware,
+        ))
+        .with_state(state.clone());
+
     let app = Router::new()
         .merge(public_routes)
         .merge(protected_routes)
+        .merge(admin_routes)
         .route("/health", get(|| async { "OK" }))
         .layer(middleware::from_fn_with_state(
             state.clone(),
