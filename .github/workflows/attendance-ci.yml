@@ -1,16 +1,16 @@
-name: Auth Service CI/CD
+name: Attendance Service CI/CD
 
 on:
   push:
-    branches: [ main, fix-docker-build ]
+    branches: [ main ]
     paths:
-      - 'services/auth/**'
+      - 'services/attendance/**'
       - 'services/migrations/**'
-      - '.github/workflows/auth-ci.yml'
+      - '.github/workflows/attendance-ci.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'services/auth/**'
+      - 'services/attendance/**'
       - 'services/migrations/**'
 
 env:
@@ -23,12 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -45,7 +45,7 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v4
         with:
-          path: services/auth/target
+          path: services/attendance/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Check
@@ -56,12 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       
@@ -73,12 +73,12 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
       
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     
     services:
       postgres:
@@ -98,7 +98,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: auth_test
+          POSTGRES_DB: attendance_test
         ports:
           - 5432:5432
         options: >-
@@ -111,7 +111,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Install SQLx CLI
         run: cargo install sqlx-cli --no-default-features --features postgres
@@ -119,38 +119,32 @@ jobs:
       - name: Set up environment
         run: |
           cp .env.example .env
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
-          echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/attendance_test" >> .env
           echo "JWT_SECRET=test-jwt-secret-for-ci-pipeline" >> .env
-          echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
+          echo "AUTH_SERVICE_URL=http://localhost:8081" >> .env
       
       - name: Run migrations
         run: sqlx migrate run --source ../migrations
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/attendance_test
       
       - name: Run unit tests
         run: cargo test --lib --verbose
-      
-      - name: Run integration tests
-        run: cargo test --test integration -- --ignored
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/attendance_test
           JWT_SECRET: test-jwt-secret-for-ci-pipeline
-          PASSWORD_PEPPER: test-pepper-for-ci-pipeline
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
 
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Install cargo-audit
         run: cargo install cargo-audit
@@ -166,12 +160,12 @@ jobs:
     needs: [check, fmt, clippy, test]
     defaults:
       run:
-        working-directory: ./services/auth
+        working-directory: ./services/attendance
     steps:
       - uses: actions/checkout@v4
       
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Build release
         run: cargo build --release --verbose
@@ -179,5 +173,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: auth-service
-          path: services/auth/target/release/auth
+          name: attendance-service
+          path: services/attendance/target/release/attendance
