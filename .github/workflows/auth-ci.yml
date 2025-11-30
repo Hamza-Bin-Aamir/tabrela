@@ -140,67 +140,6 @@ jobs:
           PASSWORD_PEPPER: test-pepper-for-ci-pipeline
           TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
 
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./services/auth
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: auth_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@nightly
-      
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
-      
-      - name: Install SQLx CLI
-        run: cargo install sqlx-cli --no-default-features --features postgres
-      
-      - name: Set up environment
-        run: |
-          cp .env.example .env
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
-          echo "TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auth_test" >> .env
-          echo "JWT_SECRET=test-jwt-secret-for-ci-pipeline" >> .env
-          echo "PASSWORD_PEPPER=test-pepper-for-ci-pipeline" >> .env
-      
-      - name: Run migrations
-        run: sqlx migrate run --source ../migrations
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
-      
-      - name: Generate coverage
-        run: cargo tarpaulin --out Xml --verbose --exclude-files tests/*
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auth_test
-          JWT_SECRET: test-jwt-secret-for-ci-pipeline
-          PASSWORD_PEPPER: test-pepper-for-ci-pipeline
-      
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./services/auth/cobertura.xml
-          flags: auth-service
-          fail_ci_if_error: false
-
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
