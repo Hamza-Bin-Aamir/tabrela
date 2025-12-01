@@ -1,7 +1,7 @@
 {
-  "name": "Tabrela - GIKI Debate Society",
+  "name": "Tabrela - GIKI Debate Team",
   "short_name": "Tabrela",
-  "description": "Official platform for the GIKI Debate Society - track attendance, merits, and achievements",
+  "description": "Official platform for the GIKI Debate Team - track attendance, merits, and achievements",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

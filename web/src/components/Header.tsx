@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { AdminService } from '../services/admin'
+import { usePWAInstall } from '../hooks/usePWAInstall'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { isAuthenticated, user, logout } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
+  const { isInstallable, promptInstall } = usePWAInstall()
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -188,6 +190,20 @@ export default function Header() {
                 Sign up
               </Link>
             </>
+          )}
+          {isInstallable && (
+            <button
+              onClick={() => {
+                promptInstall()
+                closeMenu()
+              }}
+              className="mobile-nav-link install-btn-mobile w-full text-left"
+            >
+              <svg className="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Install App
+            </button>
           )}
         </nav>
 
