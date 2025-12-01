@@ -1,0 +1,115 @@
+# ==============================================================================
+# Tabrela Backend - Multi-Service Docker Image
+# ==============================================================================
+# This Dockerfile builds all backend services into a single image:
+# - auth (Rust)
+# - attendance (Rust)  
+# - merit (Rust)
+# - email (Python)
+#
+# Uses multi-stage builds to minimize final image size
+# ==============================================================================
+
+# ==============================================================================
+# Stage 1: Build Rust services
+# ==============================================================================
+FROM rust:1.83-bookworm AS rust-builder
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy workspace Cargo files
+COPY services/auth/Cargo.toml services/auth/Cargo.lock* ./auth/
+COPY services/attendance/Cargo.toml services/attendance/Cargo.lock* ./attendance/
+COPY services/merit/Cargo.toml services/merit/Cargo.lock* ./merit/
+
+# Copy source code
+COPY services/auth/src ./auth/src
+COPY services/attendance/src ./attendance/src
+COPY services/merit/src ./merit/src
+
+# Build auth service
+WORKDIR /build/auth
+RUN cargo build --release
+
+# Build attendance service
+WORKDIR /build/attendance
+RUN cargo build --release
+
+# Build merit service
+WORKDIR /build/merit
+RUN cargo build --release
+
+# ==============================================================================
+# Stage 2: Build Python email service
+# ==============================================================================
+FROM python:3.11-slim AS python-builder
+
+WORKDIR /build/email
+
+COPY services/email/requirements.txt .
+RUN pip install --no-cache-dir --target=/python-deps -r requirements.txt
+
+COPY services/email/app.py .
+COPY services/email/models.py .
+
+# ==============================================================================
+# Stage 3: Final runtime image
+# ==============================================================================
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    python3 \
+    python3-pip \
+    supervisor \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd -m -u 1001 appuser
+
+WORKDIR /app
+
+# Copy Rust binaries from builder
+COPY --from=rust-builder /build/auth/target/release/auth /app/bin/auth
+COPY --from=rust-builder /build/attendance/target/release/attendance /app/bin/attendance
+COPY --from=rust-builder /build/merit/target/release/merit /app/bin/merit
+
+# Copy Python dependencies and app
+COPY --from=python-builder /python-deps /usr/local/lib/python3.11/dist-packages
+COPY --from=python-builder /build/email/app.py /app/email/app.py
+COPY --from=python-builder /build/email/models.py /app/email/models.py
+
+# Copy migrations
+COPY services/migrations /app/migrations
+
+# Copy supervisor config
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create log directory
+RUN mkdir -p /var/log/tabrela && chown -R appuser:appuser /var/log/tabrela
+
+# Make binaries executable
+RUN chmod +x /app/bin/*
+
+# Change ownership
+RUN chown -R appuser:appuser /app
+
+# Expose ports
+# Auth: 8081, Attendance: 8082, Merit: 8083, Email: 5000
+EXPOSE 8081 8082 8083 5000
+
+# Health check - checks if auth service is responding
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8081/health || exit 1
+
+# Run supervisor to manage all services
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
