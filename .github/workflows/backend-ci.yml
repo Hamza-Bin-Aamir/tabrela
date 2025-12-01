@@ -127,6 +127,15 @@ jobs:
             services/auth/target
           key: ${{ runner.os }}-cargo-auth-${{ hashFiles('services/auth/Cargo.lock') }}
       
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/auth
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
       - name: Run tests
         working-directory: ./services/auth
         env:
@@ -135,7 +144,6 @@ jobs:
           PASSWORD_PEPPER: test-pepper-for-ci
           EMAIL_SERVICE_API_KEY: test-api-key
           EMAIL_SERVICE_URL: http://localhost:5000
-          SQLX_OFFLINE: true
         run: cargo test --verbose
 
   # ==========================================================================
@@ -177,13 +185,21 @@ jobs:
             services/attendance/target
           key: ${{ runner.os }}-cargo-attendance-${{ hashFiles('services/attendance/Cargo.lock') }}
       
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/attendance
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
       - name: Run tests
         working-directory: ./services/attendance
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
           JWT_SECRET: test-jwt-secret-for-ci
           AUTH_SERVICE_URL: http://localhost:8081
-          SQLX_OFFLINE: true
         run: cargo test --verbose
 
   # ==========================================================================
@@ -225,13 +241,21 @@ jobs:
             services/merit/target
           key: ${{ runner.os }}-cargo-merit-${{ hashFiles('services/merit/Cargo.lock') }}
       
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/merit
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
       - name: Run tests
         working-directory: ./services/merit
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
           JWT_SECRET: test-jwt-secret-for-ci
           AUTH_SERVICE_URL: http://localhost:8081
-          SQLX_OFFLINE: true
         run: cargo test --verbose
 
   # ==========================================================================
