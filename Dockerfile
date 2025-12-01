@@ -91,6 +91,7 @@ RUN apt-get update && apt-get install -y \
     supervisor \
     curl \
     nginx \
+    gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -116,8 +117,12 @@ COPY services/migrations /app/migrations
 # Copy supervisor config
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy nginx config
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx config template (will be processed by envsubst at startup)
+COPY docker/nginx.conf /etc/nginx/nginx.conf.template
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Create log directory
 RUN mkdir -p /var/log/tabrela && chown -R appuser:appuser /var/log/tabrela
@@ -129,15 +134,20 @@ RUN chmod +x /app/bin/*
 RUN chown -R appuser:appuser /app
 
 # Expose ports
-# Only nginx (8080) is exposed - it reverse proxies to internal services
+# Only nginx is exposed - it reverse proxies to internal services
+# Railway will set PORT env var (usually 8080 or similar)
 # Internal: Auth: 8081, Attendance: 8082, Merit: 8083, Email: 5000
 EXPOSE 8080
 
-# Health check - checks nginx gateway which proxies to auth service
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Health check - directly check auth service on its fixed port
+# This avoids dependency on nginx/PORT configuration
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:8081/health || exit 1
 
-# Run supervisor to manage all services
+# Run entrypoint script which:
+# 1. Processes nginx config with PORT env var
+# 2. Starts supervisord to manage all services
+#
 # Note: supervisord runs as root to manage child processes, but individual
 # services run as 'appuser' for security (see supervisord.conf)
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/app/entrypoint.sh"]
