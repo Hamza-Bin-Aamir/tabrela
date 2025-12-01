@@ -59,35 +59,30 @@ fi
 
 print_success "All required tools are installed"
 
-# Check for .env files
-print_info "Checking environment files..."
+# Load unified environment file
+print_info "Loading environment configuration..."
 
-if [ ! -f "services/auth/.env" ]; then
-    print_warning "services/auth/.env not found. Creating from .env.example..."
-    cp services/auth/.env.example services/auth/.env
-    print_warning "Please edit services/auth/.env with your configuration"
-fi
-
-if [ ! -f "services/email/.env" ]; then
-    print_warning "services/email/.env not found. Creating from .env.example..."
-    cp services/email/.env.example services/email/.env
-    print_warning "Please edit services/email/.env with your configuration"
-fi
-
-if [ ! -f "services/attendance/.env" ]; then
-    print_warning "services/attendance/.env not found. Creating from .env.example..."
-    cp services/attendance/.env.example services/attendance/.env
-    print_warning "Please edit services/attendance/.env with your configuration"
-fi
-
-if [ ! -f "web/.env" ]; then
-    print_warning "web/.env not found. Creating from .env.example..."
-    if [ -f "web/.env.example" ]; then
-        cp web/.env.example web/.env
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        print_warning ".env not found. Creating from .env.example..."
+        cp .env.example .env
+        print_warning "Please edit .env with your configuration"
     else
-        echo "VITE_API_URL=http://localhost:8081" > web/.env
+        print_error "No .env or .env.example found!"
+        exit 1
     fi
 fi
+
+# Export all variables from .env
+set -a
+source .env
+set +a
+
+# Map unified env vars to service-specific ones for backwards compatibility
+export HOST="${AUTH_HOST:-0.0.0.0}"
+export PORT="${AUTH_PORT:-8081}"
+
+print_success "Environment loaded from root .env"
 
 # Check if ports are available
 print_info "Checking port availability..."
@@ -101,6 +96,12 @@ fi
 if port_in_use 8082; then
     print_error "Port 8082 (Attendance Service) is already in use"
     print_info "Please stop the process using: lsof -ti:8082 | xargs kill -9"
+    exit 1
+fi
+
+if port_in_use 8083; then
+    print_error "Port 8083 (Merit Service) is already in use"
+    print_info "Please stop the process using: lsof -ti:8083 | xargs kill -9"
     exit 1
 fi
 
@@ -155,10 +156,10 @@ print_success "All dependencies are ready"
 print_info "Starting microservices..."
 
 # Start Email Service
-print_info "Starting Email Service on port 5000..."
+print_info "Starting Email Service on port ${EMAIL_PORT:-5000}..."
 cd services/email
 source venv/bin/activate
-nohup python app.py > ../../logs/email-service.log 2>&1 &
+HOST="${EMAIL_HOST:-0.0.0.0}" PORT="${EMAIL_PORT:-5000}" nohup python app.py > ../../logs/email-service.log 2>&1 &
 EMAIL_PID=$!
 deactivate
 cd ../..
@@ -169,22 +170,31 @@ print_success "Email Service started (PID: $EMAIL_PID)"
 sleep 2
 
 # Start Auth Service
-print_info "Starting Auth Service on port 8081..."
+print_info "Starting Auth Service on port ${AUTH_PORT:-8081}..."
 cd services/auth
-nohup cargo run --release > ../../logs/auth-service.log 2>&1 &
+HOST="${AUTH_HOST:-0.0.0.0}" PORT="${AUTH_PORT:-8081}" nohup cargo run --release > ../../logs/auth-service.log 2>&1 &
 AUTH_PID=$!
 cd ../..
 echo $AUTH_PID > logs/auth-service.pid
 print_success "Auth Service started (PID: $AUTH_PID)"
 
 # Start Attendance Service
-print_info "Starting Attendance Service on port 8082..."
+print_info "Starting Attendance Service on port ${ATTENDANCE_PORT:-8082}..."
 cd services/attendance
-nohup cargo run --release > ../../logs/attendance-service.log 2>&1 &
+HOST="${ATTENDANCE_HOST:-0.0.0.0}" PORT="${ATTENDANCE_PORT:-8082}" nohup cargo run --release > ../../logs/attendance-service.log 2>&1 &
 ATTENDANCE_PID=$!
 cd ../..
 echo $ATTENDANCE_PID > logs/attendance-service.pid
 print_success "Attendance Service started (PID: $ATTENDANCE_PID)"
+
+# Start Merit Service
+print_info "Starting Merit Service on port ${MERIT_PORT:-8083}..."
+cd services/merit
+HOST="${MERIT_HOST:-0.0.0.0}" PORT="${MERIT_PORT:-8083}" nohup cargo run --release > ../../logs/merit-service.log 2>&1 &
+MERIT_PID=$!
+cd ../..
+echo $MERIT_PID > logs/merit-service.pid
+print_success "Merit Service started (PID: $MERIT_PID)"
 
 # Wait for auth service to be ready
 print_info "Waiting for services to initialize..."
@@ -212,12 +222,14 @@ echo -e "${GREEN}Services:${NC}"
 echo "  📧 Email Service:       http://localhost:5000 (PID: $EMAIL_PID)"
 echo "  🔐 Auth Service:        http://localhost:8081 (PID: $AUTH_PID)"
 echo "  📋 Attendance Service:  http://localhost:8082 (PID: $ATTENDANCE_PID)"
-echo "  🌐 Frontend:            http://localhost:5173 (PID: $FRONTEND_PID)"
+echo "  � Merit Service:       http://localhost:8083 (PID: $MERIT_PID)"
+echo "  �🌐 Frontend:            http://localhost:5173 (PID: $FRONTEND_PID)"
 echo ""
 echo -e "${BLUE}Logs:${NC}"
 echo "  Email Service:       tail -f logs/email-service.log"
 echo "  Auth Service:        tail -f logs/auth-service.log"
 echo "  Attendance Service:  tail -f logs/attendance-service.log"
+echo "  Merit Service:       tail -f logs/merit-service.log"
 echo "  Frontend:            tail -f logs/frontend.log"
 echo ""
 echo -e "${YELLOW}To stop all services:${NC}"
@@ -236,6 +248,9 @@ cleanup() {
     fi
     if [ -f logs/attendance-service.pid ]; then
         kill $(cat logs/attendance-service.pid) 2>/dev/null || true
+    fi
+    if [ -f logs/merit-service.pid ]; then
+        kill $(cat logs/merit-service.pid) 2>/dev/null || true
     fi
     if [ -f logs/frontend.pid ]; then
         kill $(cat logs/frontend.pid) 2>/dev/null || true

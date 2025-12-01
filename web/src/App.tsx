@@ -20,10 +20,13 @@ import AccessibilityPage from './pages/AccessibilityPage'
 import LoadingPage from './pages/LoadingPage'
 import ErrorPage from './pages/ErrorPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminMeritPage from './pages/AdminMeritPage'
+import AdminAwardsPage from './pages/AdminAwardsPage'
 import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
 import EventFormPage from './pages/EventFormPage'
 import AttendanceDashboardPage from './pages/AttendanceDashboardPage'
+import ProfilePage from './pages/ProfilePage'
 import './App.css'
 
 function App() {
@@ -103,6 +106,29 @@ function App() {
                     <AttendanceDashboardPage />
                   </AdminRoute>
                 }
+              />
+              {/* Merit management (admin only) */}
+              <Route
+                path="/admin/merit"
+                element={
+                  <AdminRoute>
+                    <AdminMeritPage />
+                  </AdminRoute>
+                }
+              />
+              {/* Awards management (admin only) */}
+              <Route
+                path="/admin/awards"
+                element={
+                  <AdminRoute>
+                    <AdminAwardsPage />
+                  </AdminRoute>
+                }
+              />
+              {/* User profile routes - publicly shareable */}
+              <Route
+                path="/users/:username"
+                element={<ProfilePage />}
               />
               {/* fallback to home */}
               <Route path="*" element={<Home />} />

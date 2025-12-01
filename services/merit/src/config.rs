@@ -21,11 +21,11 @@ impl Config {
             database_url: env::var("DATABASE_URL")
                 .unwrap_or_else(|_| "postgres://postgres:postgres@localhost/tabrela".to_string()),
             host: env::var("HOST")
-                .or_else(|_| env::var("ATTENDANCE_HOST"))
+                .or_else(|_| env::var("MERIT_HOST"))
                 .unwrap_or_else(|_| "0.0.0.0".to_string()),
             port: env::var("PORT")
-                .or_else(|_| env::var("ATTENDANCE_PORT"))
-                .unwrap_or_else(|_| "8082".to_string())
+                .or_else(|_| env::var("MERIT_PORT"))
+                .unwrap_or_else(|_| "8083".to_string())
                 .parse()?,
             jwt_secret: env::var("JWT_SECRET")
                 .unwrap_or_else(|_| "your-super-secret-jwt-key-change-in-production".to_string()),

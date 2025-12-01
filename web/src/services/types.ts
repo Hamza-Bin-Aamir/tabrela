@@ -244,3 +244,185 @@ export interface AttendanceMatrixResponse {
   rows: AttendanceMatrixRow[];
   aggregate_stats: AggregateStats;
 }
+
+// ============================================================================
+// Merit Types
+// ============================================================================
+
+// Public profile - visible to everyone
+export interface PublicProfileResponse {
+  id: string;
+  username: string;
+  year_joined: number;
+  created_at: string;
+}
+
+// Private profile - visible to self (includes merit)
+export interface PrivateProfileResponse {
+  id: string;
+  username: string;
+  email: string;
+  reg_number: string;
+  year_joined: number;
+  phone_number: string;
+  email_verified: boolean;
+  merit_points: number;
+  created_at: string;
+}
+
+// Admin profile - visible to admins (full details)
+export interface AdminProfileResponse {
+  id: string;
+  username: string;
+  email: string;
+  reg_number: string;
+  year_joined: number;
+  phone_number: string;
+  email_verified: boolean;
+  merit_points: number;
+  is_admin: boolean;
+  created_at: string;
+}
+
+// Union type for profile responses
+export type ProfileResponse = PublicProfileResponse | PrivateProfileResponse | AdminProfileResponse;
+
+// Merit response
+export interface MeritResponse {
+  user_id: string;
+  merit_points: number;
+  updated_at: string;
+}
+
+// Merit history entry
+export interface MeritHistoryEntry {
+  id: string;
+  user_id: string;
+  admin_id: string | null;
+  admin_username: string | null;
+  change_amount: number;
+  previous_total: number;
+  new_total: number;
+  reason: string;
+  created_at: string;
+}
+
+// Merit history response
+export interface MeritHistoryResponse {
+  history: MeritHistoryEntry[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// Admin update merit request
+export interface UpdateMeritRequest {
+  user_id: string;
+  change_amount: number;
+  reason: string;
+}
+
+// Admin merit list item
+export interface UserMeritInfo {
+  user_id: string;
+  username: string;
+  merit_points: number;
+}
+
+// Admin merit list response
+export interface AdminMeritListResponse {
+  users: UserMeritInfo[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// ============================================================================
+// Award Types
+// ============================================================================
+
+// Award tier enum
+export type AwardTier = 'bronze' | 'silver' | 'gold';
+
+// Award response (public)
+export interface AwardResponse {
+  id: string;
+  title: string;
+  description: string | null;
+  tier: AwardTier;
+  awarded_at: string;
+}
+
+// Award list response
+export interface AwardListResponse {
+  awards: AwardResponse[];
+  total: number;
+}
+
+// Award with admin details (for admin views)
+export interface AwardWithAdmin {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  tier: AwardTier;
+  awarded_by: string | null;
+  awarded_by_username: string | null;
+  username: string;  // recipient's username
+  awarded_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Award history entry
+export interface AwardHistoryEntry {
+  id: string;
+  award_id: string;
+  user_id: string;
+  admin_id: string | null;
+  admin_username: string | null;
+  previous_tier: AwardTier | null;
+  new_tier: AwardTier;
+  reason: string;
+  created_at: string;
+}
+
+// Award history response
+export interface AwardHistoryResponse {
+  history: AwardHistoryEntry[];
+  total: number;
+}
+
+// Create award request (admin)
+export interface CreateAwardRequest {
+  user_id: string;
+  title: string;
+  description?: string;
+  tier: AwardTier;
+  reason: string;
+}
+
+// Upgrade award request (admin)
+export interface UpgradeAwardRequest {
+  new_tier: AwardTier;
+  new_title?: string;
+  reason: string;
+}
+
+// Edit award request (admin)
+export interface EditAwardRequest {
+  title: string;
+  description?: string;
+  tier: AwardTier;
+}
+
+// Admin award list response
+export interface AdminAwardListResponse {
+  awards: AwardWithAdmin[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}

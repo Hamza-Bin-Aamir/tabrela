@@ -80,14 +80,17 @@ export default function Header() {
                   <Link to="/attendance/dashboard" className="nav-link">
                     Attendance
                   </Link>
+                  <Link to="/admin/merit" className="nav-link">
+                    Merit
+                  </Link>
                   <Link to="/admin" className="nav-link">
                     Admin
                   </Link>
                 </>
               )}
-              <span className="nav-link cursor-default">
-                Hi, {user?.username}
-              </span>
+              <Link to={`/users/${user?.username}`} className="nav-link">
+                {user?.username}
+              </Link>
               <button onClick={handleLogout} className="nav-link">
                 Log out
               </button>
@@ -142,6 +145,13 @@ export default function Header() {
                     Attendance
                   </Link>
                   <Link 
+                    to="/admin/merit" 
+                    className="mobile-nav-link"
+                    onClick={closeMenu}
+                  >
+                    Merit
+                  </Link>
+                  <Link 
                     to="/admin" 
                     className="mobile-nav-link"
                     onClick={closeMenu}
@@ -150,9 +160,13 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              <span className="mobile-nav-link cursor-default">
-                Hi, {user?.username}
-              </span>
+              <Link 
+                to={`/users/${user?.username}`}
+                className="mobile-nav-link"
+                onClick={closeMenu}
+              >
+                My Profile
+              </Link>
               <button onClick={handleLogout} className="mobile-nav-link w-full text-left">
                 Log out
               </button>

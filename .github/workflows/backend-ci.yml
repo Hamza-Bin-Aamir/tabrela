@@ -1,0 +1,366 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ==========================================================================
+  # Detect which services changed
+  # ==========================================================================
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.changes.outputs.auth }}
+      attendance: ${{ steps.changes.outputs.attendance }}
+      merit: ${{ steps.changes.outputs.merit }}
+      email: ${{ steps.changes.outputs.email }}
+      migrations: ${{ steps.changes.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            auth:
+              - 'services/auth/**'
+            attendance:
+              - 'services/attendance/**'
+            merit:
+              - 'services/merit/**'
+            email:
+              - 'services/email/**'
+            migrations:
+              - 'services/migrations/**'
+
+  # ==========================================================================
+  # Rust Services - Shared Setup
+  # ==========================================================================
+  rust-check:
+    name: Rust Check
+    needs: changes
+    if: ${{ needs.changes.outputs.auth == 'true' || needs.changes.outputs.attendance == 'true' || needs.changes.outputs.merit == 'true' || needs.changes.outputs.migrations == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [auth, attendance, merit]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/${{ matrix.service }}/target
+          key: ${{ runner.os }}-cargo-${{ matrix.service }}-${{ hashFiles(format('services/{0}/Cargo.lock', matrix.service)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.service }}-
+      
+      - name: Check
+        working-directory: ./services/${{ matrix.service }}
+        run: cargo check --verbose
+      
+      - name: Format
+        working-directory: ./services/${{ matrix.service }}
+        run: cargo fmt -- --check
+      
+      - name: Clippy
+        working-directory: ./services/${{ matrix.service }}
+        run: cargo clippy -- -D warnings
+
+  # ==========================================================================
+  # Auth Service Tests
+  # ==========================================================================
+  test-auth:
+    name: Test Auth Service
+    needs: [changes, rust-check]
+    if: ${{ needs.changes.outputs.auth == 'true' || needs.changes.outputs.migrations == 'true' }}
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tabrela_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/auth/target
+          key: ${{ runner.os }}-cargo-auth-${{ hashFiles('services/auth/Cargo.lock') }}
+      
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/auth
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
+      - name: Run tests
+        working-directory: ./services/auth
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+          JWT_SECRET: test-jwt-secret-for-ci
+          PASSWORD_PEPPER: test-pepper-for-ci
+          EMAIL_SERVICE_API_KEY: test-api-key
+          EMAIL_SERVICE_URL: http://localhost:5000
+        run: cargo test --verbose
+
+  # ==========================================================================
+  # Attendance Service Tests
+  # ==========================================================================
+  test-attendance:
+    name: Test Attendance Service
+    needs: [changes, rust-check]
+    if: ${{ needs.changes.outputs.attendance == 'true' || needs.changes.outputs.migrations == 'true' }}
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tabrela_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/attendance/target
+          key: ${{ runner.os }}-cargo-attendance-${{ hashFiles('services/attendance/Cargo.lock') }}
+      
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/attendance
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
+      - name: Run tests
+        working-directory: ./services/attendance
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+          JWT_SECRET: test-jwt-secret-for-ci
+          AUTH_SERVICE_URL: http://localhost:8081
+        run: cargo test --verbose
+
+  # ==========================================================================
+  # Merit Service Tests
+  # ==========================================================================
+  test-merit:
+    name: Test Merit Service
+    needs: [changes, rust-check]
+    if: ${{ needs.changes.outputs.merit == 'true' || needs.changes.outputs.migrations == 'true' }}
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tabrela_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/merit/target
+          key: ${{ runner.os }}-cargo-merit-${{ hashFiles('services/merit/Cargo.lock') }}
+      
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/merit
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
+      - name: Run tests
+        working-directory: ./services/merit
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+          JWT_SECRET: test-jwt-secret-for-ci
+          AUTH_SERVICE_URL: http://localhost:8081
+        run: cargo test --verbose
+
+  # ==========================================================================
+  # Email Service Tests (Python)
+  # ==========================================================================
+  test-email:
+    name: Test Email Service
+    needs: changes
+    if: ${{ needs.changes.outputs.email == 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/email/requirements.txt
+      
+      - name: Install dependencies
+        working-directory: ./services/email
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run tests
+        working-directory: ./services/email
+        env:
+          RESEND_API_KEY: test_key
+          SERVICE_API_KEY: test_service_key
+          FROM_EMAIL: test@example.com
+          FRONTEND_URL: http://localhost:5173
+        run: pytest -v --cov=. --cov-report=term-missing
+
+  # ==========================================================================
+  # Build Docker Images (on main branch only)
+  # ==========================================================================
+  build-images:
+    name: Build Docker Images
+    needs: [test-auth, test-attendance, test-merit, test-email]
+    if: github.ref == 'refs/heads/main' && always() && !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Auth Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/auth
+          push: false
+          tags: tabrela/auth-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Build Attendance Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/attendance
+          file: ./services/attendance/Dockerfile
+          push: false
+          tags: tabrela/attendance-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true  # Dockerfile may not exist yet
+      
+      - name: Build Merit Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/merit
+          file: ./services/merit/Dockerfile
+          push: false
+          tags: tabrela/merit-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true  # Dockerfile may not exist yet
+      
+      - name: Build Email Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/email
+          push: false
+          tags: tabrela/email-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ==========================================================================
+  # Summary Job
+  # ==========================================================================
+  ci-success:
+    name: CI Success
+    needs: [rust-check, test-auth, test-attendance, test-merit, test-email]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "Some jobs failed"
+            exit 1
+          fi
+          echo "All jobs passed!"

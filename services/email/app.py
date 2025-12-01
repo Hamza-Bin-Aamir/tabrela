@@ -3,6 +3,7 @@ from flask_cors import CORS
 import resend
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 import logging
 from pydantic import ValidationError
 
@@ -16,8 +17,11 @@ from models import (
     HealthResponse
 )
 
-# Load environment variables
+# Load environment variables - try service-local first, then root
 load_dotenv()
+root_env = Path(__file__).parent.parent.parent / '.env'
+if root_env.exists():
+    load_dotenv(root_env)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
