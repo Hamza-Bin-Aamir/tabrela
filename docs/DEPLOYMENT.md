@@ -1,4 +1,4 @@
-# Tabrela - Deployment Guide (Railway + cPanel)
+# Tabrela - Automated Deployment CI/CD for Railway and cPanel
 Hybrid deployment setup:
 - Frontend: cPanel shared hosting (Apache)
 - Backend: Railway.app (Docker)
