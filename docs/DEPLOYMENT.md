@@ -144,7 +144,7 @@ Go to your GitHub repo → **Settings** → **Secrets and variables** → **Acti
 | `CPANEL_USER` | cPanel username | `username` |
 | `CPANEL_PORT` | SSH port (optional, defaults to 22) | `22` |
 | `CPANEL_PUBLIC_HTML` | Deployment path | `~/public_html` |
-| `VITE_API_BASE_URL` | Railway backend URL | `https://tabrela-api.up.railway.app` |
+| `VITE_API_URL` | Railway backend URL | `https://tabrela-api.up.railway.app` |
 
 ### Backend (Railway) Secrets:
 
