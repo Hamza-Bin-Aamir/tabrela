@@ -54,6 +54,7 @@ Click on your backend service → **"Variables"** → Add these:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `PORT` | Railway injects this; must be `8081` for auth service health check | `8081` |
 | `DATABASE_URL` | Auto-linked from PostgreSQL | `${{Postgres.DATABASE_URL}}` |
 | `JWT_SECRET` | Random 32+ char string | `your-super-secret-jwt-key` |
 | `JWT_ACCESS_TOKEN_EXPIRY` | Token expiry in seconds | `3600` |
