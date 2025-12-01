@@ -3,7 +3,7 @@
 # ==============================================================================
 # This workflow:
 # 1. Builds the React/Vite frontend
-# 2. Deploys compiled assets to VPS via rsync
+# 2. Deploys compiled assets to cPanel shared hosting via rsync
 # 
 # Triggers on pushes to main branch (frontend changes only)
 # ==============================================================================
@@ -53,38 +53,33 @@ jobs:
         working-directory: web
         run: npm run build
         env:
-          # Add any build-time environment variables here
+          # Railway backend URL (set in GitHub secrets)
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       # ========================================================================
-      # Deploy to VPS via rsync
+      # Deploy to cPanel via rsync over SSH
       # ========================================================================
-      - name: Deploy to VPS via rsync
+      - name: Deploy to cPanel via rsync
         uses: easingthemes/ssh-deploy@main
         with:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.VPS_HOST }}
-          REMOTE_USER: ${{ secrets.VPS_USER }}
-          REMOTE_PORT: ${{ secrets.VPS_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.CPANEL_HOST }}
+          REMOTE_USER: ${{ secrets.CPANEL_USER }}
+          REMOTE_PORT: ${{ secrets.CPANEL_PORT }}
           SOURCE: "web/dist/"
-          TARGET: ${{ secrets.VPS_FRONTEND_PATH }}
-          ARGS: "-avz --delete"
-          SCRIPT_BEFORE: |
-            # Create target directory if it doesn't exist
-            mkdir -p ${{ secrets.VPS_FRONTEND_PATH }}
+          TARGET: ${{ secrets.CPANEL_PUBLIC_HTML }}
+          ARGS: "-avz --delete --exclude='.htaccess'"
           SCRIPT_AFTER: |
-            # Ensure correct permissions
-            chmod -R 755 ${{ secrets.VPS_FRONTEND_PATH }}
             echo "Frontend deployment completed successfully!"
 
       # ========================================================================
-      # Notify on Success/Failure (optional)
+      # Deployment Status
       # ========================================================================
       - name: Deployment Status
         if: always()
         run: |
           if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Frontend deployed successfully!"
+            echo "✅ Frontend deployed to cPanel successfully!"
           else
             echo "❌ Frontend deployment failed!"
           fi

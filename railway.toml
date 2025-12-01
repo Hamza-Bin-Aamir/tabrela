@@ -1,0 +1,22 @@
+# ==============================================================================
+# Tabrela - Railway Configuration
+# ==============================================================================
+# This file configures how Railway deploys the backend services.
+# 
+# Railway will build using docker/Dockerfile.backend which includes:
+# - Auth service (port 8081)
+# - Attendance service (port 8082)
+# - Merit service (port 8083)
+# - Email service (port 5000)
+# ==============================================================================
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile.backend"
+
+[deploy]
+# Health check endpoint (auth service)
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
