@@ -55,9 +55,9 @@ Click on your backend service → **"Variables"** → Add these:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `DATABASE_URL` | Auto-linked from PostgreSQL | `${{Postgres.DATABASE_URL}}` |
-| `AUTH_JWT_SECRET` | Random 32+ char string | `your-super-secret-jwt-key` |
-| `AUTH_JWT_EXPIRY` | Token expiry in seconds | `3600` |
-| `AUTH_REFRESH_EXPIRY` | Refresh token expiry | `604800` |
+| `JWT_SECRET` | Random 32+ char string | `your-super-secret-jwt-key` |
+| `JWT_ACCESS_TOKEN_EXPIRY` | Token expiry in seconds | `3600` |
+| `JWT_REFRESH_TOKEN_EXPIRY` | Refresh token expiry | `604800` |
 | `RESEND_API_KEY` | From resend.com | `re_xxxxx` |
 | `EMAIL_SERVICE_API_KEY` | API key for email service (must match `SERVICE_API_KEY` in email service) | `re_xxxxx` |
 | `EMAIL_FROM` | Sender email | `noreply@yourdomain.com` |
