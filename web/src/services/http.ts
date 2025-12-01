@@ -1,8 +1,9 @@
-import { API_BASE_URL } from './config';
+import { AUTH_API_URL } from './config';
 import { TokenManager } from './tokenManager';
 import type { ApiError } from './types';
 
 // HTTP Client with automatic token handling
+// Note: This client is primarily used for auth-related requests
 export class HttpClient {
   private static async refreshAccessToken(): Promise<boolean> {
     const refreshToken = TokenManager.getRefreshToken();
@@ -11,7 +12,7 @@ export class HttpClient {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/refresh`, {
+      const response = await fetch(`${AUTH_API_URL}/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +55,7 @@ export class HttpClient {
     if (options.method !== 'GET' && !csrfToken && accessToken) {
       try {
         // Fetch CSRF token if we don't have one but are authenticated
-        const response = await fetch(`${API_BASE_URL}/csrf-token`, {
+        const response = await fetch(`${AUTH_API_URL}/csrf-token`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -74,7 +75,7 @@ export class HttpClient {
       headers['X-CSRF-Token'] = csrfToken;
     }
 
-    let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    let response = await fetch(`${AUTH_API_URL}${endpoint}`, {
       ...options,
       headers,
     });
@@ -87,7 +88,7 @@ export class HttpClient {
         const newAccessToken = TokenManager.getAccessToken();
         if (newAccessToken) {
           headers['Authorization'] = `Bearer ${newAccessToken}`;
-          response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          response = await fetch(`${AUTH_API_URL}${endpoint}`, {
             ...options,
             headers,
           });

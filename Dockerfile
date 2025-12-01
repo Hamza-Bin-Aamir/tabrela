@@ -90,6 +90,7 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     supervisor \
     curl \
+    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -115,6 +116,9 @@ COPY services/migrations /app/migrations
 # Copy supervisor config
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Copy nginx config
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
 # Create log directory
 RUN mkdir -p /var/log/tabrela && chown -R appuser:appuser /var/log/tabrela
 
@@ -125,14 +129,13 @@ RUN chmod +x /app/bin/*
 RUN chown -R appuser:appuser /app
 
 # Expose ports
-# Auth: 8081, Attendance: 8082, Merit: 8083
-# Note: Email service (5000) is internal only - not exposed to host
-EXPOSE 8081 8082 8083
+# Only nginx (8080) is exposed - it reverse proxies to internal services
+# Internal: Auth: 8081, Attendance: 8082, Merit: 8083, Email: 5000
+EXPOSE 8080
 
-# Health check - checks if auth service is responding
-# IMPORTANT: Auth service must implement GET /health returning 200 OK
+# Health check - checks nginx gateway which proxies to auth service
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8081/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Run supervisor to manage all services
 # Note: supervisord runs as root to manage child processes, but individual

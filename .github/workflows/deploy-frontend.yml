@@ -13,7 +13,7 @@
 # - CPANEL_USER: cPanel SSH username
 # - CPANEL_PORT: SSH port (optional, defaults to 22)
 # - CPANEL_PUBLIC_HTML: Target path (e.g., ~/public_html)
-# - VITE_API_BASE_URL: Backend API URL (Railway URL)
+# - VITE_API_URL: Backend API URL (Railway URL, e.g., https://tabrela-backend.up.railway.app)
 # ==============================================================================
 
 name: Build and Deploy Frontend
@@ -59,12 +59,12 @@ jobs:
         working-directory: web
         run: npm run build
         env:
-          # Backend API URLs - all point to Railway backend
-          # Railway routes to auth service (8081) by default
+          # Backend API URL - the nginx gateway URL on Railway
+          # Frontend config computes service paths automatically:
+          # AUTH_API_URL = VITE_API_URL + /api/auth
+          # ATTENDANCE_API_URL = VITE_API_URL + /api/attendance  
+          # MERIT_API_URL = VITE_API_URL + /api/merit
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_AUTH_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_ATTENDANCE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_MERIT_API_URL: ${{ secrets.VITE_API_URL }}
 
       # ========================================================================
       # Deploy to cPanel via rsync over SSH
