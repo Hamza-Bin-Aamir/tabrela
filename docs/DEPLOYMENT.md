@@ -63,6 +63,8 @@ Click on your backend service → **"Variables"** → Add these:
 | `FROM_EMAIL` | Sender email | `noreply@yourdomain.com` |
 | `RUST_LOG` | Log level | `info` |
 | `ALLOWED_ORIGINS` | Frontend URL | `https://tabrela.yourdomain.com` |
+| `SERVICE_API_KEY` | API key for inter-service authentication | `service_xxxxx` |
+| `FRONTEND_URL` | Public URL of the frontend (used in email links) | `https://tabrela.yourdomain.com` |
 
 ### 1.4 Get Railway Deploy Token
 
