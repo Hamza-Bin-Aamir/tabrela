@@ -1,0 +1,118 @@
+# ==============================================================================
+# Tabrela - Docker Compose Configuration
+# ==============================================================================
+# This file orchestrates the entire Tabrela backend stack.
+# 
+# Usage:
+#   Production: docker-compose up -d
+#   Development: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# IMPORTANT: If you fork this repository, update GITHUB_REPOSITORY_OWNER in .env
+# or set it when running: GITHUB_REPOSITORY_OWNER=your-username docker-compose up
+# ==============================================================================
+
+# Note: 'version' field is deprecated and omitted per Docker Compose specification
+
+services:
+  # ============================================================================
+  # Backend Services (all-in-one container)
+  # ============================================================================
+  backend:
+    # Image path uses GITHUB_REPOSITORY_OWNER for portability
+    # Default: ghcr.io/hamza-bin-aamir/tabrela-backend:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-hamza-bin-aamir}/tabrela-backend:${IMAGE_TAG:-latest}
+    container_name: tabrela-backend
+    restart: unless-stopped
+    ports:
+      - "8081:8081"  # Auth service
+      - "8082:8082"  # Attendance service
+      - "8083:8083"  # Merit service
+      # Note: Email service (5000) is NOT exposed - internal only for security
+    environment:
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Auth Service Config
+      - JWT_SECRET=${AUTH_JWT_SECRET}
+      - JWT_ACCESS_TOKEN_EXPIRY=${JWT_ACCESS_TOKEN_EXPIRY:-3600}
+      - JWT_REFRESH_TOKEN_EXPIRY=${JWT_REFRESH_TOKEN_EXPIRY:-604800}
+      
+      # Email Service Config
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@tabrela.com}
+      - SERVICE_API_KEY=${SERVICE_API_KEY}
+      
+      # Auth Service - Email Integration
+      - EMAIL_SERVICE_API_KEY=${SERVICE_API_KEY}
+      - PASSWORD_PEPPER=${PASSWORD_PEPPER}
+      
+      # Service URLs (internal)
+      - AUTH_SERVICE_URL=http://localhost:8081
+      - ATTENDANCE_SERVICE_URL=http://localhost:8082
+      - MERIT_SERVICE_URL=http://localhost:8083
+      - EMAIL_SERVICE_URL=http://localhost:5000
+      
+      # Frontend URL for email templates
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      
+      # General
+      - RUST_LOG=${RUST_LOG:-info}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+    volumes:
+      - tabrela-logs:/var/log/tabrela
+    healthcheck:
+      # Note: /health endpoint must be implemented in auth service
+      # See services/auth/src/main.rs for implementation
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - tabrela-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ============================================================================
+  # PostgreSQL Database
+  # ============================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: tabrela-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-tabrela}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-tabrela}
+    volumes:
+      - tabrela-db-data:/var/lib/postgresql/data
+      - ./services/migrations:/docker-entrypoint-initdb.d:ro
+    # SECURITY: Database port is NOT exposed to host in production
+    # Only accessible within Docker network (tabrela-network)
+    # For development/debugging, uncomment the ports section below:
+    # ports:
+    #   - "127.0.0.1:5432:5432"  # Bind to localhost only if needed
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tabrela} -d ${POSTGRES_DB:-tabrela}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tabrela-network
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  tabrela-network:
+    driver: bridge
+
+# ==============================================================================
+# Volumes
+# ==============================================================================
+volumes:
+  tabrela-db-data:
+    driver: local
+  tabrela-logs:
+    driver: local

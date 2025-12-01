@@ -1,0 +1,92 @@
+# ==============================================================================
+# Tabrela Frontend - Build and Deploy Workflow
+# ==============================================================================
+# This workflow:
+# 1. Builds the React/Vite frontend
+# 2. Deploys compiled assets to cPanel shared hosting via rsync
+# 
+# Triggers on pushes to main branch (frontend changes only)
+#
+# Required GitHub Secrets:
+# - CPANEL_SSH_KEY: SSH private key for cPanel access
+# - CPANEL_HOST: cPanel server hostname or IP
+# - CPANEL_USER: cPanel SSH username
+# - CPANEL_PORT: SSH port (optional, defaults to 22)
+# - CPANEL_PUBLIC_HTML: Target path (e.g., ~/public_html)
+# - VITE_API_BASE_URL: Backend API URL (Railway URL)
+# ==============================================================================
+
+name: Build and Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ========================================================================
+      # Checkout Code
+      # ========================================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ========================================================================
+      # Setup Node.js
+      # ========================================================================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # ========================================================================
+      # Install Dependencies
+      # ========================================================================
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      # ========================================================================
+      # Build Frontend
+      # ========================================================================
+      - name: Build frontend
+        working-directory: web
+        run: npm run build
+        env:
+          # Railway backend URL (set in GitHub secrets)
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      # ========================================================================
+      # Deploy to cPanel via rsync over SSH
+      # ========================================================================
+      - name: Deploy to cPanel via rsync
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.CPANEL_HOST }}
+          REMOTE_USER: ${{ secrets.CPANEL_USER }}
+          # Default to port 22 if CPANEL_PORT is not set
+          REMOTE_PORT: ${{ secrets.CPANEL_PORT != '' && secrets.CPANEL_PORT || '22' }}
+          SOURCE: "web/dist/"
+          TARGET: ${{ secrets.CPANEL_PUBLIC_HTML }}
+          ARGS: "-avz --delete"
+
+      # ========================================================================
+      # Deployment Status
+      # ========================================================================
+      - name: Deployment Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Frontend deployed to cPanel successfully!"
+          else
+            echo "❌ Frontend deployment failed!"
+          fi

@@ -1,0 +1,58 @@
+# ==============================================================================
+# Tabrela Backend - Build and Deploy to Railway
+# ==============================================================================
+# This workflow:
+# 1. Deploys all backend services to Railway.app
+# 
+# Railway handles the Docker build on their infrastructure,
+# so we just trigger the deployment.
+# ==============================================================================
+
+name: Deploy Backend to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'services/**'
+      - 'docker/**'
+      - 'railway.toml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ========================================================================
+      # Checkout Code
+      # ========================================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ========================================================================
+      # Install Railway CLI
+      # ========================================================================
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      # ========================================================================
+      # Deploy to Railway
+      # ========================================================================
+      - name: Deploy to Railway
+        run: railway up --service=backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      # ========================================================================
+      # Deployment Status
+      # ========================================================================
+      - name: Verify Deployment Status
+        run: |
+          DEPLOY_STATUS=$(railway status --service=backend | grep -i "live" || true)
+          if [ -n "$DEPLOY_STATUS" ]; then
+            echo "✅ Backend deployed to Railway successfully!"
+          else
+            echo "❌ Backend deployment failed!"
+            exit 1

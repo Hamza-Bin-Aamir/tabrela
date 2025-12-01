@@ -1,0 +1,23 @@
+# ==============================================================================
+# Tabrela - Development Docker Compose Override
+# ==============================================================================
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ==============================================================================
+
+# Note: 'version' field is deprecated and omitted per Docker Compose specification
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      - RUST_LOG=debug
+      - ENVIRONMENT=development
+    volumes:
+      - ./services/migrations:/app/migrations
+      - tabrela-logs:/var/log/tabrela
+
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind to localhost only for development tools
