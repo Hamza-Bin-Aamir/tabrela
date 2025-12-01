@@ -41,18 +41,18 @@ jobs:
       # Deploy to Railway
       # ========================================================================
       - name: Deploy to Railway
-        run: railway up --detach
+        run: railway up --service=backend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       # ========================================================================
       # Deployment Status
       # ========================================================================
-      - name: Deployment Status
-        if: always()
+      - name: Verify Deployment Status
         run: |
-          if [ "${{ job.status }}" == "success" ]; then
+          DEPLOY_STATUS=$(railway status --service=backend | grep -i "live" || true)
+          if [ -n "$DEPLOY_STATUS" ]; then
             echo "✅ Backend deployed to Railway successfully!"
           else
             echo "❌ Backend deployment failed!"
-          fi
+            exit 1

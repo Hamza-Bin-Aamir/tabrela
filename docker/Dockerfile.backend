@@ -32,9 +32,9 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy workspace Cargo files
-COPY services/auth/Cargo.toml services/auth/Cargo.lock* ./auth/
-COPY services/attendance/Cargo.toml services/attendance/Cargo.lock* ./attendance/
-COPY services/merit/Cargo.toml services/merit/Cargo.lock* ./merit/
+COPY services/auth/Cargo.toml services/auth/Cargo.lock ./auth/
+COPY services/attendance/Cargo.toml services/attendance/Cargo.lock ./attendance/
+COPY services/merit/Cargo.toml services/merit/Cargo.lock ./merit/
 
 # Copy source code
 COPY services/auth/src ./auth/src

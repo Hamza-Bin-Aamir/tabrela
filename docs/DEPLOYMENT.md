@@ -54,7 +54,7 @@ Click on your backend service → **"Variables"** → Add these:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `PORT` | Railway injects this; must be `8081` for auth service health check | `8081` |
+| `PORT` | Must be set to `8081` in Railway environment variables so Railway routes traffic to the auth service health check | `8081` |
 | `DATABASE_URL` | Auto-linked from PostgreSQL | `${{Postgres.DATABASE_URL}}` |
 | `JWT_SECRET` | Random 32+ char string | `your-super-secret-jwt-key` |
 | `JWT_ACCESS_TOKEN_EXPIRY` | Token expiry in seconds | `3600` |
@@ -179,7 +179,7 @@ Visit your domain: `https://tabrela.yourdomain.com`
 curl https://tabrela-api.up.railway.app/health
 
 # Auth service
-curl https://tabrela-api.up.railway.app/health
+curl https://tabrela-api.up.railway.app/auth/health
 ```
 
 ### Railway Dashboard
