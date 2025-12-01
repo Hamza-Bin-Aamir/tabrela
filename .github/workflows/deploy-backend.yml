@@ -11,11 +11,6 @@ name: Deploy Backend to Railway
 on:
   push:
     branches: [main, infra]
-    paths:
-      - 'services/**'
-      - 'Dockerfile'
-      - 'railway.toml'
-      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 jobs:
