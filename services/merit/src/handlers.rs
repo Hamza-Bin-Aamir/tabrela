@@ -50,7 +50,7 @@ pub async fn get_profile_by_username(
     let current_user_id = current_user_id.map(|Extension(id)| id);
 
     // Check if the current user is viewing their own profile
-    let is_own_profile = current_user_id.map_or(false, |id| profile.id == id);
+    let is_own_profile = current_user_id == Some(profile.id);
 
     // Check if current user is admin
     let is_admin = match current_user_id {
@@ -802,7 +802,7 @@ pub async fn admin_list_all_awards(
     Query(query): Query<MeritHistoryQuery>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let page = query.page.unwrap_or(1).max(1);
-    let per_page = query.per_page.unwrap_or(20).min(100).max(1);
+    let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * per_page;
 
     let (awards, total) = state

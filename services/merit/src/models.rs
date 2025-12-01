@@ -190,12 +190,12 @@ impl std::fmt::Display for AwardTier {
 impl AwardTier {
     /// Check if this tier can be upgraded to target tier
     pub fn can_upgrade_to(&self, target: &AwardTier) -> bool {
-        match (self, target) {
-            (AwardTier::Bronze, AwardTier::Silver) => true,
-            (AwardTier::Bronze, AwardTier::Gold) => true,
-            (AwardTier::Silver, AwardTier::Gold) => true,
-            _ => false,
-        }
+        matches!(
+            (self, target),
+            (AwardTier::Bronze, AwardTier::Silver)
+                | (AwardTier::Bronze, AwardTier::Gold)
+                | (AwardTier::Silver, AwardTier::Gold)
+        )
     }
 }
 

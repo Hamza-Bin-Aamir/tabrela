@@ -92,9 +92,7 @@ pub async fn optional_auth_middleware(
 
     // Try to extract token from Authorization header
     if let Some(auth_header) = headers.get("Authorization").and_then(|v| v.to_str().ok()) {
-        if auth_header.starts_with("Bearer ") {
-            let token = &auth_header[7..];
-
+        if let Some(token) = auth_header.strip_prefix("Bearer ") {
             // Try to validate the token
             let mut validation = Validation::default();
             validation.validate_exp = true;
