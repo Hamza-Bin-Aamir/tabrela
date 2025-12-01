@@ -1,10 +1,7 @@
-# ==============================================================================
 # Tabrela - Deployment Guide (Railway + cPanel)
-# ==============================================================================
-# Hybrid deployment setup:
-# - Frontend: cPanel shared hosting (Apache)
-# - Backend: Railway.app (Docker)
-# ==============================================================================
+Hybrid deployment setup:
+- Frontend: cPanel shared hosting (Apache)
+- Backend: Railway.app (Docker)
 
 ## Architecture Overview
 
@@ -95,16 +92,16 @@ This is your `VITE_API_BASE_URL` for the frontend.
 ### 2.2 Get SSH Connection Details
 
 From cPanel, note:
-- **Host**: Usually your server hostname (e.g., `s11527.yourhostingprovider.com` or `209.42.24.4`)
-- **Username**: Your cPanel username (e.g., `gikidtco`)
-- **Port**: Usually `22` (check cPanel docs)
+- **Host**: Usually your server hostname 
+- **Username**: Your cPanel username
+- **Port**: Usually `22` 
 - **Path**: `~/public_html` or `~/public_html/subdomain_folder`
 
 ### 2.3 Test SSH Connection (Optional)
 
 From your local machine:
 ```bash
-ssh -p 22 gikidtco@209.42.24.4
+ssh -p 22 your-username@your-server-ip
 ```
 
 ### 2.4 Ensure .htaccess is in Place

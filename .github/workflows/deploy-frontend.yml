@@ -73,7 +73,8 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.CPANEL_HOST }}
           REMOTE_USER: ${{ secrets.CPANEL_USER }}
-          REMOTE_PORT: ${{ secrets.CPANEL_PORT || 22 }}
+          # Default to port 22 if CPANEL_PORT is not set
+          REMOTE_PORT: ${{ secrets.CPANEL_PORT != '' && secrets.CPANEL_PORT || '22' }}
           SOURCE: "web/dist/"
           TARGET: ${{ secrets.CPANEL_PUBLIC_HTML }}
           ARGS: "-avz --delete --exclude='.htaccess'"

@@ -6,6 +6,9 @@
 # Usage:
 #   Production: docker-compose up -d
 #   Development: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# IMPORTANT: If you fork this repository, update GITHUB_REPOSITORY_OWNER in .env
+# or set it when running: GITHUB_REPOSITORY_OWNER=your-username docker-compose up
 # ==============================================================================
 
 # Note: 'version' field is deprecated and omitted per Docker Compose specification
@@ -15,7 +18,9 @@ services:
   # Backend Services (all-in-one container)
   # ============================================================================
   backend:
-    image: ${DOCKER_REGISTRY:-ghcr.io}/hamza-bin-aamir/tabrela-backend:${IMAGE_TAG:-latest}
+    # Image path uses GITHUB_REPOSITORY_OWNER for portability
+    # Default: ghcr.io/hamza-bin-aamir/tabrela-backend:latest
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${GITHUB_REPOSITORY_OWNER:-hamza-bin-aamir}/tabrela-backend:${IMAGE_TAG:-latest}
     container_name: tabrela-backend
     restart: unless-stopped
     ports:
