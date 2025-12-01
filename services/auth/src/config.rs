@@ -20,10 +20,15 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Result<Self, String> {
+        // Try service-local .env first, then fall back to root .env
         dotenvy::dotenv().ok();
+        dotenvy::from_filename("../../.env").ok();
 
-        let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let host = env::var("HOST")
+            .or_else(|_| env::var("AUTH_HOST"))
+            .unwrap_or_else(|_| "0.0.0.0".to_string());
         let port = env::var("PORT")
+            .or_else(|_| env::var("AUTH_PORT"))
             .unwrap_or_else(|_| "8081".to_string())
             .parse()
             .map_err(|_| "Invalid PORT")?;
