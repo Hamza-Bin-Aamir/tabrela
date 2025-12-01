@@ -65,9 +65,10 @@ FROM python:${PYTHON_VERSION}-slim AS python-builder
 
 WORKDIR /build/email
 
-# Create virtual environment for clean dependency isolation
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Create virtual environment at the SAME PATH it will be used in runtime
+# This is critical because venv hardcodes the Python path in script shebangs
+RUN python -m venv /app/email/venv
+ENV PATH="/app/email/venv/bin:$PATH"
 
 COPY services/email/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -103,8 +104,8 @@ COPY --from=rust-builder /build/auth/target/release/auth /app/bin/auth
 COPY --from=rust-builder /build/attendance/target/release/attendance /app/bin/attendance
 COPY --from=rust-builder /build/merit/target/release/merit /app/bin/merit
 
-# Copy Python virtual environment (version-independent path)
-COPY --from=python-builder /opt/venv /app/email/venv
+# Copy Python virtual environment (must be at same path as created in builder)
+COPY --from=python-builder /app/email/venv /app/email/venv
 
 # Copy Python app files
 COPY --from=python-builder /build/email/app.py /app/email/app.py
