@@ -10,8 +10,8 @@ use validator::Validate;
 
 use crate::{
     models::{
-        AdminMeritListResponse, AdminProfileResponse, AwardListResponse, AwardResponse,
-        AwardHistoryResponse, CreateAwardRequest, EditAwardRequest, MeritHistoryQuery,
+        AdminMeritListResponse, AdminProfileResponse, AwardHistoryResponse, AwardListResponse,
+        AwardResponse, CreateAwardRequest, EditAwardRequest, MeritHistoryQuery,
         MeritHistoryResponse, MeritResponse, PrivateProfileResponse, PublicProfileResponse,
         UpdateMeritRequest, UpgradeAwardRequest,
     },
@@ -48,7 +48,7 @@ pub async fn get_profile_by_username(
 
     // Check if we have an authenticated user
     let current_user_id = current_user_id.map(|Extension(id)| id);
-    
+
     // Check if the current user is viewing their own profile
     let is_own_profile = current_user_id.map_or(false, |id| profile.id == id);
 
@@ -105,16 +105,12 @@ pub async fn get_my_merit(
     State(state): State<Arc<AppState>>,
     Extension(user_id): Extension<Uuid>,
 ) -> Result<Json<MeritResponse>, (StatusCode, Json<Value>)> {
-    let merit = state
-        .db
-        .get_user_merit(user_id)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": "Database error"})),
-            )
-        })?;
+    let merit = state.db.get_user_merit(user_id).await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "Database error"})),
+        )
+    })?;
 
     match merit {
         Some(m) => Ok(Json(MeritResponse {
@@ -124,16 +120,12 @@ pub async fn get_my_merit(
         })),
         None => {
             // Initialize merit if not exists
-            let m = state
-                .db
-                .initialize_user_merit(user_id)
-                .await
-                .map_err(|_| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(json!({"error": "Failed to initialize merit"})),
-                    )
-                })?;
+            let m = state.db.initialize_user_merit(user_id).await.map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "Failed to initialize merit"})),
+                )
+            })?;
             Ok(Json(MeritResponse {
                 user_id: m.user_id,
                 merit_points: m.merit_points,
@@ -221,7 +213,12 @@ pub async fn admin_update_merit(
     // Update merit
     let (updated_merit, history) = state
         .db
-        .update_merit(payload.user_id, admin_id, payload.change_amount, &payload.reason)
+        .update_merit(
+            payload.user_id,
+            admin_id,
+            payload.change_amount,
+            &payload.reason,
+        )
         .await
         .map_err(|_| {
             (
@@ -503,7 +500,9 @@ pub async fn admin_get_award(
         )
     })?;
 
-    let username = user.map(|u| u.username).unwrap_or_else(|| "Unknown".to_string());
+    let username = user
+        .map(|u| u.username)
+        .unwrap_or_else(|| "Unknown".to_string());
 
     Ok(Json(json!({
         "id": award.id,
@@ -780,12 +779,16 @@ pub async fn get_my_awards_history(
     State(state): State<Arc<AppState>>,
     Extension(user_id): Extension<Uuid>,
 ) -> Result<Json<AwardHistoryResponse>, (StatusCode, Json<Value>)> {
-    let history = state.db.get_user_award_history(user_id).await.map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "Database error"})),
-        )
-    })?;
+    let history = state
+        .db
+        .get_user_award_history(user_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?;
 
     Ok(Json(AwardHistoryResponse {
         history: history.clone(),

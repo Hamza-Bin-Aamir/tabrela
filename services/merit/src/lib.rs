@@ -36,7 +36,10 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
     let unauthenticated_routes = Router::new()
         // Public profiles - shareable with anyone
         .route("/users/:username", get(handlers::get_profile_by_username))
-        .route("/users/:username/awards", get(handlers::get_user_awards_public))
+        .route(
+            "/users/:username/awards",
+            get(handlers::get_user_awards_public),
+        )
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::optional_auth_middleware,
@@ -69,9 +72,18 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         // Admin awards routes
         .route("/admin/awards", get(handlers::admin_list_all_awards))
         .route("/admin/awards", post(handlers::admin_create_award))
-        .route("/admin/awards/:award_id", axum::routing::put(handlers::admin_edit_award))
-        .route("/admin/awards/:award_id/upgrade", axum::routing::patch(handlers::admin_upgrade_award))
-        .route("/admin/awards/:user_id/history", get(handlers::admin_get_award_history))
+        .route(
+            "/admin/awards/:award_id",
+            axum::routing::put(handlers::admin_edit_award),
+        )
+        .route(
+            "/admin/awards/:award_id/upgrade",
+            axum::routing::patch(handlers::admin_upgrade_award),
+        )
+        .route(
+            "/admin/awards/:user_id/history",
+            get(handlers::admin_get_award_history),
+        )
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::admin_middleware,
@@ -107,10 +119,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::DELETE,
                 http::Method::OPTIONS,
             ])
-            .allow_headers([
-                http::header::CONTENT_TYPE,
-                http::header::AUTHORIZATION,
-            ])
+            .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
             .allow_credentials(true)
     } else if config.allowed_origins.contains(&"*".to_string()) {
         // Development mode - allow all origins with all methods and headers
@@ -144,10 +153,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::DELETE,
                 http::Method::OPTIONS,
             ])
-            .allow_headers([
-                http::header::CONTENT_TYPE,
-                http::header::AUTHORIZATION,
-            ])
+            .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
             .allow_credentials(true)
     }
 }

@@ -50,7 +50,7 @@ pub struct MeritHistoryWithAdmin {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,       // user_id
+    pub sub: String, // user_id
     pub username: String,
     pub exp: i64,
     pub iat: i64,
@@ -70,7 +70,11 @@ pub struct UpdateMeritRequest {
     /// Amount to change (positive to add, negative to remove)
     pub change_amount: i32,
     /// Required reason for the change
-    #[validate(length(min = 3, max = 500, message = "Reason must be between 3 and 500 characters"))]
+    #[validate(length(
+        min = 3,
+        max = 500,
+        message = "Reason must be between 3 and 500 characters"
+    ))]
     pub reason: String,
 }
 
@@ -214,7 +218,7 @@ pub struct Award {
 pub struct AwardWithAdmin {
     pub id: Uuid,
     pub user_id: Uuid,
-    pub username: String,  // recipient's username
+    pub username: String, // recipient's username
     pub title: String,
     pub description: Option<String>,
     pub tier: AwardTier,
@@ -260,12 +264,20 @@ pub struct AwardHistoryWithAdmin {
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateAwardRequest {
     pub user_id: Uuid,
-    #[validate(length(min = 1, max = 255, message = "Title must be between 1 and 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Title must be between 1 and 255 characters"
+    ))]
     pub title: String,
     #[validate(length(max = 1000, message = "Description must be at most 1000 characters"))]
     pub description: Option<String>,
     pub tier: AwardTier,
-    #[validate(length(min = 3, max = 500, message = "Reason must be between 3 and 500 characters"))]
+    #[validate(length(
+        min = 3,
+        max = 500,
+        message = "Reason must be between 3 and 500 characters"
+    ))]
     pub reason: String,
 }
 
@@ -273,16 +285,28 @@ pub struct CreateAwardRequest {
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpgradeAwardRequest {
     pub new_tier: AwardTier,
-    #[validate(length(min = 1, max = 255, message = "Title must be between 1 and 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Title must be between 1 and 255 characters"
+    ))]
     pub new_title: Option<String>,
-    #[validate(length(min = 3, max = 500, message = "Reason must be between 3 and 500 characters"))]
+    #[validate(length(
+        min = 3,
+        max = 500,
+        message = "Reason must be between 3 and 500 characters"
+    ))]
     pub reason: String,
 }
 
 /// Request to edit an award (admin only)
 #[derive(Debug, Deserialize, Validate)]
 pub struct EditAwardRequest {
-    #[validate(length(min = 1, max = 255, message = "Title must be between 1 and 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Title must be between 1 and 255 characters"
+    ))]
     pub title: String,
     #[validate(length(max = 1000, message = "Description must be at most 1000 characters"))]
     pub description: Option<String>,

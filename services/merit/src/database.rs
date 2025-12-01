@@ -1,6 +1,6 @@
 use crate::models::{
-    Award, AwardHistory, AwardHistoryWithAdmin, AwardTier, AwardWithAdmin,
-    MeritHistory, MeritHistoryWithAdmin, UserMerit, UserMeritInfo,
+    Award, AwardHistory, AwardHistoryWithAdmin, AwardTier, AwardWithAdmin, MeritHistory,
+    MeritHistoryWithAdmin, UserMerit, UserMeritInfo,
 };
 use chrono::Utc;
 use sqlx::{postgres::PgPoolOptions, PgPool};
@@ -268,7 +268,10 @@ impl Database {
     }
 
     /// Get user profile by ID
-    pub async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<UserProfileRow>, sqlx::Error> {
+    pub async fn get_user_by_id(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Option<UserProfileRow>, sqlx::Error> {
         let user = sqlx::query_as::<_, UserProfileRow>(
             r#"
             SELECT 
@@ -450,7 +453,10 @@ impl Database {
     }
 
     /// Get award with admin info
-    pub async fn get_award_with_admin(&self, award_id: Uuid) -> Result<Option<AwardWithAdmin>, sqlx::Error> {
+    pub async fn get_award_with_admin(
+        &self,
+        award_id: Uuid,
+    ) -> Result<Option<AwardWithAdmin>, sqlx::Error> {
         let award = sqlx::query_as::<_, AwardWithAdmin>(
             r#"
             SELECT 
@@ -495,7 +501,10 @@ impl Database {
     }
 
     /// Get award history for a specific award
-    pub async fn get_award_history(&self, award_id: Uuid) -> Result<Vec<AwardHistoryWithAdmin>, sqlx::Error> {
+    pub async fn get_award_history(
+        &self,
+        award_id: Uuid,
+    ) -> Result<Vec<AwardHistoryWithAdmin>, sqlx::Error> {
         let history = sqlx::query_as::<_, AwardHistoryWithAdmin>(
             r#"
             SELECT 
