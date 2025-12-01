@@ -39,7 +39,10 @@ COPY services/merit/Cargo.toml services/merit/Cargo.lock ./merit/
 # Copy source code
 COPY services/auth/src ./auth/src
 COPY services/attendance/src ./attendance/src
-COPY services/merit/src ./merit/src
+COPY services/merit/src ./merit/
+
+# Copy migrations (required by sqlx::migrate! macro at compile time)
+COPY services/migrations ./migrations
 
 # Build auth service
 WORKDIR /build/auth
