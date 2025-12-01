@@ -3,15 +3,16 @@
 # ==============================================================================
 # This file configures how Railway deploys the backend services.
 # 
-# Railway will build using docker/Dockerfile.backend which includes:
+# Railway will build using the root Dockerfile which includes:
 # - Auth service (port 8081) - primary service, handles health checks
 # - Attendance service (port 8082)
 # - Merit service (port 8083)
 # - Email service (port 5000) - internal only
 #
-# IMPORTANT: Railway needs to know which port to route traffic to.
-# Set the PORT environment variable in Railway dashboard to 8081 (auth service).
-# Railway will proxy external requests to this port.
+# IMPORTANT: 
+# 1. Set PORT=8081 in Railway environment variables
+# 2. Set RAILWAY_SERVICE_NAME in GitHub Secrets to match your Railway service name
+#    (Go to Railway Dashboard → Click on your service → The name shown at the top)
 # ==============================================================================
 
 [build]
@@ -22,7 +23,6 @@ dockerfilePath = "Dockerfile"
 # Health check configuration
 # Railway sends requests to healthcheckPath on the PORT (should be 8081)
 # The auth service implements GET /health returning 200 OK
-# Ensure PORT=8081 is set in Railway environment variables
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"

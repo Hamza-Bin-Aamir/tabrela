@@ -150,7 +150,14 @@ Go to your GitHub repo → **Settings** → **Secrets and variables** → **Acti
 
 | Secret | Description | Example |
 |--------|-------------|---------|
-| `RAILWAY_TOKEN` | Railway deploy token | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `RAILWAY_TOKEN` | Railway project token (not account token) | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `RAILWAY_SERVICE_NAME` | Name of your service in Railway dashboard | `tabrela` or `backend` |
+
+**To find your service name:**
+1. Go to Railway Dashboard
+2. Click on your project
+3. Click on the service (not the database)
+4. The name at the top is your service name
 
 ---
 

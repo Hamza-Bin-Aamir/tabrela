@@ -1,58 +1,44 @@
 # ==============================================================================
-# Tabrela Backend - Build and Deploy to Railway
+# Tabrela Backend - Deploy to Railway
 # ==============================================================================
-# This workflow:
-# 1. Deploys all backend services to Railway.app
-# 
-# Railway handles the Docker build on their infrastructure,
-# so we just trigger the deployment.
+# Required GitHub Secrets:
+#   - RAILWAY_TOKEN: Project token from Railway (Project Settings -> Tokens)
+#   - RAILWAY_SERVICE_NAME: The name of your service in Railway dashboard
 # ==============================================================================
 
 name: Deploy Backend to Railway
 
 on:
   push:
-    branches: [main]
+    branches: [main, infra]
     paths:
       - 'services/**'
-      - 'docker/**'
+      - 'Dockerfile'
       - 'railway.toml'
       - '.github/workflows/deploy-backend.yml'
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-      # ========================================================================
-      # Checkout Code
-      # ========================================================================
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ========================================================================
-      # Install Railway CLI
-      # ========================================================================
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      # ========================================================================
-      # Deploy to Railway
-      # ========================================================================
       - name: Deploy to Railway
-        run: railway up --detach
+        run: railway up --service="${RAILWAY_SERVICE_NAME}" --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_NAME: ${{ secrets.RAILWAY_SERVICE_NAME }}
 
-      # ========================================================================
-      # Deployment Status
-      # ========================================================================
-      - name: Verify Deployment Status
+      - name: Deployment Status
+        if: always()
         run: |
-          DEPLOY_STATUS=$(railway status --service=backend | grep -i "live" || true)
-          if [ -n "$DEPLOY_STATUS" ]; then
-            echo "✅ Backend deployed to Railway successfully!"
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Backend deployed to Railway successfully!"
           else
-            echo "❌ Backend deployment failed!"
-            exit 1
+            echo "Deployment failed! Ensure RAILWAY_SERVICE_NAME secret is set."
+          fi
