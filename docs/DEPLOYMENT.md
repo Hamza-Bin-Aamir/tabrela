@@ -175,7 +175,7 @@ Visit your domain: `https://tabrela.yourdomain.com`
 curl https://tabrela-api.up.railway.app/health
 
 # Auth service
-curl https://tabrela-api.up.railway.app/auth/health
+curl https://tabrela-api.up.railway.app/health
 ```
 
 ### Railway Dashboard
