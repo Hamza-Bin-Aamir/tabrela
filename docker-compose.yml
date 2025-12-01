@@ -47,6 +47,9 @@ services:
       - MERIT_SERVICE_URL=http://localhost:8083
       - EMAIL_SERVICE_URL=http://localhost:5000
       
+      # Frontend URL for email templates
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      
       # General
       - RUST_LOG=${RUST_LOG:-info}
       - ENVIRONMENT=${ENVIRONMENT:-production}
