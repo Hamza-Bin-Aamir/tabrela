@@ -78,16 +78,15 @@ COPY services/email/models.py .
 # ==============================================================================
 # Stage 3: Final runtime image
 # ==============================================================================
-FROM debian:bookworm-slim
-
+# Using Python slim image since we need Python for email service
+# This ensures the venv works correctly (same Python paths)
 ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION}-slim AS runtime
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
-    python3 \
-    python3-venv \
     supervisor \
     curl \
     nginx \
@@ -124,6 +123,10 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf.template
 COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
+# Copy health check script
+COPY docker/healthcheck.sh /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh
+
 # Create log directory
 RUN mkdir -p /var/log/tabrela && chown -R appuser:appuser /var/log/tabrela
 
@@ -139,10 +142,11 @@ RUN chown -R appuser:appuser /app
 # Internal: Auth: 8081, Attendance: 8082, Merit: 8083, Email: 5000
 EXPOSE 8080
 
-# Health check - directly check auth service on its fixed port
-# This avoids dependency on nginx/PORT configuration
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8081/health || exit 1
+# Health check - checks ALL services, not just auth
+# Returns unhealthy if any service is down
+# Increased start-period to allow all services time to initialize
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /app/healthcheck.sh || exit 1
 
 # Run entrypoint script which:
 # 1. Processes nginx config with PORT env var
