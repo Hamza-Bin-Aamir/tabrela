@@ -39,7 +39,7 @@ services:
       
       # Email Service Config
       - RESEND_API_KEY=${RESEND_API_KEY}
-      - EMAIL_FROM=${EMAIL_FROM:-noreply@tabrela.com}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@tabrela.com}
       
       # Service URLs (internal)
       - AUTH_SERVICE_URL=http://localhost:8081
