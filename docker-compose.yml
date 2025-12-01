@@ -8,7 +8,7 @@
 #   Development: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 # ==============================================================================
 
-version: '3.8'
+# Note: 'version' field is deprecated and omitted per Docker Compose specification
 
 services:
   # ============================================================================
@@ -22,7 +22,7 @@ services:
       - "8081:8081"  # Auth service
       - "8082:8082"  # Attendance service
       - "8083:8083"  # Merit service
-      - "5000:5000"  # Email service
+      # Note: Email service (5000) is NOT exposed - internal only for security
     environment:
       # Database
       - DATABASE_URL=${DATABASE_URL}
@@ -48,6 +48,8 @@ services:
     volumes:
       - tabrela-logs:/var/log/tabrela
     healthcheck:
+      # Note: /health endpoint must be implemented in auth service
+      # See services/auth/src/main.rs for implementation
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
@@ -73,8 +75,11 @@ services:
     volumes:
       - tabrela-db-data:/var/lib/postgresql/data
       - ./services/migrations:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "5432:5432"
+    # SECURITY: Database port is NOT exposed to host in production
+    # Only accessible within Docker network (tabrela-network)
+    # For development/debugging, uncomment the ports section below:
+    # ports:
+    #   - "127.0.0.1:5432:5432"  # Bind to localhost only if needed
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tabrela} -d ${POSTGRES_DB:-tabrela}"]
       interval: 10s

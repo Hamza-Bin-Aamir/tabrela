@@ -140,7 +140,7 @@ Go to your GitHub repo → **Settings** → **Secrets and variables** → **Acti
 | `CPANEL_SSH_KEY` | Private SSH key | Contents of `~/.ssh/id_ed25519` |
 | `CPANEL_HOST` | Server hostname/IP | `209.42.24.4` |
 | `CPANEL_USER` | cPanel username | `gikidtco` |
-| `CPANEL_PORT` | SSH port | `22` |
+| `CPANEL_PORT` | SSH port (optional, defaults to 22) | `22` |
 | `CPANEL_PUBLIC_HTML` | Deployment path | `~/public_html` |
 | `VITE_API_BASE_URL` | Railway backend URL | `https://tabrela-api.up.railway.app` |
 

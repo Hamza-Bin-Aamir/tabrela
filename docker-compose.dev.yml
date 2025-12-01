@@ -4,7 +4,7 @@
 # Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 # ==============================================================================
 
-version: '3.8'
+# Note: 'version' field is deprecated and omitted per Docker Compose specification
 
 services:
   backend:
@@ -20,4 +20,4 @@ services:
 
   db:
     ports:
-      - "5432:5432"  # Expose for local development tools
+      - "127.0.0.1:5432:5432"  # Bind to localhost only for development tools

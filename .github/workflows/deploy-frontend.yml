@@ -6,6 +6,14 @@
 # 2. Deploys compiled assets to cPanel shared hosting via rsync
 # 
 # Triggers on pushes to main branch (frontend changes only)
+#
+# Required GitHub Secrets:
+# - CPANEL_SSH_KEY: SSH private key for cPanel access
+# - CPANEL_HOST: cPanel server hostname or IP
+# - CPANEL_USER: cPanel SSH username
+# - CPANEL_PORT: SSH port (optional, defaults to 22)
+# - CPANEL_PUBLIC_HTML: Target path (e.g., ~/public_html)
+# - VITE_API_BASE_URL: Backend API URL (Railway URL)
 # ==============================================================================
 
 name: Build and Deploy Frontend
@@ -65,12 +73,10 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.CPANEL_HOST }}
           REMOTE_USER: ${{ secrets.CPANEL_USER }}
-          REMOTE_PORT: ${{ secrets.CPANEL_PORT }}
+          REMOTE_PORT: ${{ secrets.CPANEL_PORT || 22 }}
           SOURCE: "web/dist/"
           TARGET: ${{ secrets.CPANEL_PUBLIC_HTML }}
           ARGS: "-avz --delete --exclude='.htaccess'"
-          SCRIPT_AFTER: |
-            echo "Frontend deployment completed successfully!"
 
       # ========================================================================
       # Deployment Status
