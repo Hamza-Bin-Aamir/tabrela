@@ -59,6 +59,7 @@ Click on your backend service → **"Variables"** → Add these:
 | `AUTH_JWT_EXPIRY` | Token expiry in seconds | `3600` |
 | `AUTH_REFRESH_EXPIRY` | Refresh token expiry | `604800` |
 | `RESEND_API_KEY` | From resend.com | `re_xxxxx` |
+| `EMAIL_SERVICE_API_KEY` | API key for email service (must match `SERVICE_API_KEY` in email service) | `re_xxxxx` |
 | `EMAIL_FROM` | Sender email | `noreply@yourdomain.com` |
 | `RUST_LOG` | Log level | `info` |
 | `ALLOWED_ORIGINS` | Frontend URL | `https://tabrela.yourdomain.com` |
