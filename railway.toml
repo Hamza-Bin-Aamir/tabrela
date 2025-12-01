@@ -16,7 +16,7 @@
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "docker/Dockerfile.backend"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 # Health check configuration
