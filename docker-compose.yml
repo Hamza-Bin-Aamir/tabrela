@@ -27,6 +27,7 @@ services:
       - "8081:8081"  # Auth service
       - "8082:8082"  # Attendance service
       - "8083:8083"  # Merit service
+      - "8084:8084"  # Tabulation service
       # Note: Email service (5000) is NOT exposed - internal only for security
     environment:
       # Database
@@ -50,6 +51,7 @@ services:
       - AUTH_SERVICE_URL=http://localhost:8081
       - ATTENDANCE_SERVICE_URL=http://localhost:8082
       - MERIT_SERVICE_URL=http://localhost:8083
+      - TABULATION_SERVICE_URL=http://localhost:8084
       - EMAIL_SERVICE_URL=http://localhost:5000
       
       # Frontend URL for email templates

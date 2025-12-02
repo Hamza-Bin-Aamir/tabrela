@@ -5,6 +5,7 @@
 # - auth (Rust) - port 8081 - implements GET /health endpoint
 # - attendance (Rust) - port 8082 - implements GET /health endpoint
 # - merit (Rust) - port 8083 - implements GET /health endpoint
+# - tabulation (Rust) - port 8084 - implements GET /health endpoint
 # - email (Python) - port 5000 - internal only, implements GET /health endpoint
 #
 # Uses multi-stage builds to minimize final image size
@@ -35,11 +36,13 @@ WORKDIR /build
 COPY services/auth/Cargo.toml services/auth/Cargo.lock ./auth/
 COPY services/attendance/Cargo.toml services/attendance/Cargo.lock ./attendance/
 COPY services/merit/Cargo.toml services/merit/Cargo.lock ./merit/
+COPY services/tabulation/Cargo.toml ./tabulation/
 
 # Copy source code
 COPY services/auth/src ./auth/src
 COPY services/attendance/src ./attendance/src
 COPY services/merit/src ./merit/src
+COPY services/tabulation/src ./tabulation/src
 
 # Copy migrations (required by sqlx::migrate! macro at compile time)
 # Path must be ../migrations relative to /build/auth, so we put it at /build/migrations
@@ -55,6 +58,10 @@ RUN cargo build --release
 
 # Build merit service
 WORKDIR /build/merit
+RUN cargo build --release
+
+# Build tabulation service
+WORKDIR /build/tabulation
 RUN cargo build --release
 
 # ==============================================================================
@@ -101,6 +108,7 @@ WORKDIR /app
 COPY --from=rust-builder /build/auth/target/release/auth /app/bin/auth
 COPY --from=rust-builder /build/attendance/target/release/attendance /app/bin/attendance
 COPY --from=rust-builder /build/merit/target/release/merit /app/bin/merit
+COPY --from=rust-builder /build/tabulation/target/release/tabulation /app/bin/tabulation
 
 # Copy Python virtual environment (version-independent path)
 COPY --from=python-builder /opt/venv /app/email/venv
@@ -125,9 +133,9 @@ RUN chmod +x /app/bin/*
 RUN chown -R appuser:appuser /app
 
 # Expose ports
-# Auth: 8081, Attendance: 8082, Merit: 8083
+# Auth: 8081, Attendance: 8082, Merit: 8083, Tabulation: 8084
 # Note: Email service (5000) is internal only - not exposed to host
-EXPOSE 8081 8082 8083
+EXPOSE 8081 8082 8083 8084
 
 # Health check - checks if auth service is responding
 # IMPORTANT: Auth service must implement GET /health returning 200 OK
