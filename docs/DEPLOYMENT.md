@@ -22,13 +22,14 @@ Hybrid deployment setup:
     │   │   - index.html    │   │   │   │   /api/auth/* → Auth       │   │
     │   │   - assets/       │   │   │   │   /api/attendance/* → Att  │   │
     │   │   - .htaccess     │   │   │   │   /api/merit/* → Merit     │   │
-    │   └───────────────────┘   │   │   │   /health → Auth health    │   │
-    └───────────────────────────┘   │   └────────────────────────────┘   │
+    │   └───────────────────┘   │   │   │   /api/tabulation/* → Tab  │   │
+    └───────────────────────────┘   │   │   /health → Auth health    │   │
+                                    │   └────────────────────────────┘   │
                                     │              │                      │
-                                    │   ┌──────────┼──────────┐          │
-                                    │   ▼          ▼          ▼          │
-                                    │  Auth    Attendance   Merit        │
-                                    │  :8081     :8082      :8083        │
+                                    │   ┌──────────┼──────────────┐      │
+                                    │   ▼          ▼          ▼   ▼      │
+                                    │  Auth    Attend.   Merit  Tab      │
+                                    │  :8081   :8082    :8083  :8084     │
                                     │              │                      │
                                     │   Email Service :5000 (internal)   │
                                     │                                    │

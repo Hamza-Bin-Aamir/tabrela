@@ -18,6 +18,7 @@ set -e
 AUTH_URL="http://127.0.0.1:8081/health"
 ATTENDANCE_URL="http://127.0.0.1:8082/health"
 MERIT_URL="http://127.0.0.1:8083/health"
+TABULATION_URL="http://127.0.0.1:8084/health"
 EMAIL_URL="http://127.0.0.1:5000/health"
 
 # Track overall health
@@ -45,6 +46,7 @@ check_service() {
 check_service "auth" "$AUTH_URL"
 check_service "attendance" "$ATTENDANCE_URL"
 check_service "merit" "$MERIT_URL"
+check_service "tabulation" "$TABULATION_URL"
 check_service "email" "$EMAIL_URL"
 
 # Output JSON
