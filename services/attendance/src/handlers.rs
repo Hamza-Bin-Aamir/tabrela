@@ -10,9 +10,10 @@ use validator::Validate;
 
 use crate::{
     models::{
-        AttendanceResponse, AttendanceStats, CheckInRequest, CreateEventRequest,
-        EventAttendanceResponse, EventListParams, EventListResponse, EventResponse,
-        LockEventRequest, RevokeAvailabilityRequest, SetAvailabilityRequest, UpdateEventRequest,
+        AdminSetAvailabilityRequest, AttendanceResponse, AttendanceStats, CheckInRequest,
+        CreateEventRequest, EventAttendanceResponse, EventListParams, EventListResponse,
+        EventResponse, LockEventRequest, RevokeAvailabilityRequest, SetAvailabilityRequest,
+        UpdateEventRequest,
     },
     AppState,
 };
@@ -530,6 +531,59 @@ pub async fn revoke_availability(
             Json(json!({"error": "No attendance record found for this user"})),
         )),
     }
+}
+
+/// Set any user's availability (Admin only)
+pub async fn admin_set_availability(
+    State(state): State<Arc<AppState>>,
+    Path(event_id): Path<Uuid>,
+    Json(payload): Json<AdminSetAvailabilityRequest>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    // Check if event exists and is not locked
+    let event = state
+        .db
+        .get_event_by_id(event_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Database error"})),
+            )
+        })?
+        .ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                Json(json!({"error": "Event not found"})),
+            )
+        })?;
+
+    if event.is_locked {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(json!({"error": "Event attendance is locked and cannot be modified"})),
+        ));
+    }
+
+    let record = state
+        .db
+        .set_availability(event_id, payload.user_id, payload.is_available)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to set availability for user: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to set availability"})),
+            )
+        })?;
+
+    let response: AttendanceResponse = record.into();
+    Ok((
+        StatusCode::OK,
+        Json(json!({
+            "message": format!("Availability {} successfully", if payload.is_available { "set" } else { "revoked" }),
+            "attendance": response
+        })),
+    ))
 }
 
 // ============================================================================

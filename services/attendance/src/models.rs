@@ -170,6 +170,12 @@ pub struct RevokeAvailabilityRequest {
     pub user_id: Uuid,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AdminSetAvailabilityRequest {
+    pub user_id: Uuid,
+    pub is_available: bool,
+}
+
 // Attendance Responses
 #[derive(Debug, Serialize)]
 pub struct AttendanceResponse {
