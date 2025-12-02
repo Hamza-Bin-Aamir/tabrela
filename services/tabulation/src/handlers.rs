@@ -11,17 +11,17 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
+    database::UpdateAllocationParams,
     models::{
-        Allocation, AllocationHistory, AllocationHistoryResponse, AllocationPoolResponse,
-        AllocationRole, Ballot, CheckedInUserResponse, CreateAllocationRequest, CreateMatchRequest,
-        CreateSeriesRequest, CurrentAllocationInfo,
+        AdjudicatorResponse, Allocation, AllocationHistory, AllocationHistoryResponse,
+        AllocationPoolResponse, AllocationRole, Ballot, BallotResponse, CheckedInUserResponse,
+        CreateAllocationRequest, CreateMatchRequest, CreateSeriesRequest, CurrentAllocationInfo,
         Match, MatchListQuery, MatchListResponse, MatchResponse, MatchSeries, MatchStatus,
-        MatchTeamResponse, PerformanceQuery, PerformanceResponse, RankingCount, ReleaseToggleRequest,
-        ResourceResponse, SeriesListQuery, SeriesListResponse, SeriesResponse, SpeakerResponse,
-        SpeakerScore, SubmitBallotRequest, SubmitFeedbackRequest, SwapAllocationRequest,
-        TeamFormat, TeamRanking, UpdateAllocationRequest,
-        UpdateMatchRequest, UpdateSeriesRequest, UpdateTeamRequest, AdjudicatorResponse,
-        BallotResponse, SpeakerScoreResponse, TeamRankingResponse,
+        MatchTeamResponse, PerformanceQuery, PerformanceResponse, RankingCount,
+        ReleaseToggleRequest, ResourceResponse, SeriesListQuery, SeriesListResponse,
+        SeriesResponse, SpeakerResponse, SpeakerScore, SpeakerScoreResponse, SubmitBallotRequest,
+        SubmitFeedbackRequest, SwapAllocationRequest, TeamFormat, TeamRanking, TeamRankingResponse,
+        UpdateAllocationRequest, UpdateMatchRequest, UpdateSeriesRequest, UpdateTeamRequest,
     },
     AppState,
 };
@@ -44,13 +44,17 @@ pub async fn create_series(
     })?;
 
     // Verify event exists
-    let event = state.db.get_event_by_id(payload.event_id).await.map_err(|e| {
-        tracing::error!("Database error checking event: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": format!("Database error: {}", e)})),
-        )
-    })?;
+    let event = state
+        .db
+        .get_event_by_id(payload.event_id)
+        .await
+        .map_err(|e| {
+            tracing::error!("Database error checking event: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": format!("Database error: {}", e)})),
+            )
+        })?;
 
     if event.is_none() {
         return Err((
@@ -168,7 +172,11 @@ pub async fn get_series(
             )
         })?;
 
-    let match_count = state.db.get_series_match_count(series.id).await.unwrap_or(0);
+    let match_count = state
+        .db
+        .get_series_match_count(series.id)
+        .await
+        .unwrap_or(0);
 
     Ok(Json(SeriesResponse {
         id: series.id,
@@ -502,7 +510,7 @@ pub async fn toggle_release(
     // FR-16: If releasing scores, also release rankings
     let scores_released = payload.scores_released;
     let mut rankings_released = payload.rankings_released;
-    
+
     if let Some(true) = scores_released {
         rankings_released = Some(true);
     }
@@ -658,7 +666,12 @@ pub async fn get_allocation_pool(
             }
 
             let current_allocation = if let Some(alloc) = allocation {
-                let match_record = state.db.get_match_by_id(alloc.match_id).await.ok().flatten();
+                let match_record = state
+                    .db
+                    .get_match_by_id(alloc.match_id)
+                    .await
+                    .ok()
+                    .flatten();
                 Some(CurrentAllocationInfo {
                     match_id: alloc.match_id,
                     room_name: match_record.and_then(|m| m.room_name),
@@ -770,7 +783,7 @@ pub async fn create_allocation(
             .list_allocations_by_match(payload.match_id)
             .await
             .unwrap_or_default();
-        
+
         let has_exact_duplicate = existing_allocations.iter().any(|a| {
             if a.user_id != Some(user_id) {
                 return false;
@@ -781,16 +794,17 @@ pub async fn create_allocation(
             // For speakers, also check the specific speaker role
             if payload.role == AllocationRole::Speaker {
                 // Allow same user as speaker if they have different speaker roles
-                let same_two_team_role = a.two_team_speaker_role == payload.two_team_speaker_role 
+                let same_two_team_role = a.two_team_speaker_role == payload.two_team_speaker_role
                     && payload.two_team_speaker_role.is_some();
-                let same_four_team_role = a.four_team_speaker_role == payload.four_team_speaker_role 
+                let same_four_team_role = a.four_team_speaker_role
+                    == payload.four_team_speaker_role
                     && payload.four_team_speaker_role.is_some();
                 return same_two_team_role || same_four_team_role;
             }
             // For adjudicators, don't allow duplicate (can only be voting OR non-voting once)
             true
         });
-        
+
         if has_exact_duplicate {
             return Err((
                 StatusCode::CONFLICT,
@@ -955,15 +969,15 @@ pub async fn update_allocation(
 
     let updated = state
         .db
-        .update_allocation(
+        .update_allocation(UpdateAllocationParams {
             allocation_id,
-            payload.role,
-            payload.team_id,
-            payload.two_team_speaker_role,
-            payload.four_team_speaker_role,
-            payload.is_chair,
-            admin_id,
-        )
+            role: payload.role,
+            team_id: payload.team_id,
+            two_team_speaker_role: payload.two_team_speaker_role,
+            four_team_speaker_role: payload.four_team_speaker_role,
+            is_chair: payload.is_chair,
+            allocated_by: admin_id,
+        })
         .await
         .map_err(|_| {
             (
@@ -1040,28 +1054,28 @@ pub async fn swap_allocations(
     // Swap the team and role information
     let _ = state
         .db
-        .update_allocation(
-            alloc1.id,
-            Some(alloc2.role),
-            alloc2.team_id,
-            alloc2.two_team_speaker_role,
-            alloc2.four_team_speaker_role,
-            alloc2.is_chair,
-            admin_id,
-        )
+        .update_allocation(UpdateAllocationParams {
+            allocation_id: alloc1.id,
+            role: Some(alloc2.role),
+            team_id: alloc2.team_id,
+            two_team_speaker_role: alloc2.two_team_speaker_role,
+            four_team_speaker_role: alloc2.four_team_speaker_role,
+            is_chair: alloc2.is_chair,
+            allocated_by: admin_id,
+        })
         .await;
 
     let _ = state
         .db
-        .update_allocation(
-            alloc2.id,
-            Some(alloc1.role),
-            alloc1.team_id,
-            alloc1.two_team_speaker_role,
-            alloc1.four_team_speaker_role,
-            alloc1.is_chair,
-            admin_id,
-        )
+        .update_allocation(UpdateAllocationParams {
+            allocation_id: alloc2.id,
+            role: Some(alloc1.role),
+            team_id: alloc1.team_id,
+            two_team_speaker_role: alloc1.two_team_speaker_role,
+            four_team_speaker_role: alloc1.four_team_speaker_role,
+            is_chair: alloc1.is_chair,
+            allocated_by: admin_id,
+        })
         .await;
 
     // Create history for both
@@ -1145,12 +1159,16 @@ pub async fn delete_allocation(
     };
     let _ = state.db.create_allocation_history(&history).await;
 
-    state.db.delete_allocation(allocation_id).await.map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": "Failed to delete allocation"})),
-        )
-    })?;
+    state
+        .db
+        .delete_allocation(allocation_id)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "Failed to delete allocation"})),
+            )
+        })?;
 
     Ok(Json(json!({"message": "Allocation deleted successfully"})))
 }
@@ -1271,10 +1289,22 @@ pub async fn get_my_ballot(
 
     let mut score_responses = Vec::new();
     for score in scores {
-        let alloc = state.db.get_allocation_by_id(score.allocation_id).await.ok().flatten();
+        let alloc = state
+            .db
+            .get_allocation_by_id(score.allocation_id)
+            .await
+            .ok()
+            .flatten();
         let speaker_username = if let Some(a) = &alloc {
             if let Some(user_id) = a.user_id {
-                state.db.get_user_by_id(user_id).await.ok().flatten().map(|u| u.username).unwrap_or_default()
+                state
+                    .db
+                    .get_user_by_id(user_id)
+                    .await
+                    .ok()
+                    .flatten()
+                    .map(|u| u.username)
+                    .unwrap_or_default()
             } else {
                 a.guest_name.clone().unwrap_or_default()
             }
@@ -1300,7 +1330,12 @@ pub async fn get_my_ballot(
 
     let mut ranking_responses = Vec::new();
     for ranking in rankings {
-        let team = state.db.get_team_by_id(ranking.team_id).await.ok().flatten();
+        let team = state
+            .db
+            .get_team_by_id(ranking.team_id)
+            .await
+            .ok()
+            .flatten();
         ranking_responses.push(TeamRankingResponse {
             id: ranking.id,
             team_id: ranking.team_id,
@@ -1396,7 +1431,12 @@ pub async fn submit_ballot(
     // FR-13: Validate unique rankings
     let mut ranks: Vec<i32> = payload.team_rankings.iter().map(|r| r.rank).collect();
     ranks.sort();
-    let unique_ranks: Vec<i32> = ranks.iter().cloned().collect::<std::collections::HashSet<_>>().into_iter().collect();
+    let unique_ranks: Vec<i32> = ranks
+        .iter()
+        .cloned()
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
     if ranks.len() != unique_ranks.len() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -1405,8 +1445,16 @@ pub async fn submit_ballot(
     }
 
     // Delete existing scores and rankings (to support re-submission/updates)
-    state.db.delete_speaker_scores_by_ballot(ballot.id).await.ok();
-    state.db.delete_team_rankings_by_ballot(ballot.id).await.ok();
+    state
+        .db
+        .delete_speaker_scores_by_ballot(ballot.id)
+        .await
+        .ok();
+    state
+        .db
+        .delete_team_rankings_by_ballot(ballot.id)
+        .await
+        .ok();
 
     // Create speaker scores
     let now = Utc::now();
@@ -1462,29 +1510,31 @@ pub async fn submit_ballot(
     // Recalculate final rankings from all submitted voting ballots
     if let Ok(rankings) = state.db.get_match_team_rankings(payload.match_id).await {
         // Get total speaker points for each team
-        let teams = state.db.list_teams_by_match(payload.match_id).await.unwrap_or_default();
-        
+        let teams = state
+            .db
+            .list_teams_by_match(payload.match_id)
+            .await
+            .unwrap_or_default();
+
         for (rank_position, (team_id, _avg_rank)) in rankings.iter().enumerate() {
             // Calculate total speaker points from submitted ballots for this team
             let total_points = calculate_team_total_points(&state.db, *team_id).await;
-            
+
             // Update team with final rank (1-indexed) and total points
-            let _ = state.db.update_team_results(
-                *team_id, 
-                (rank_position + 1) as i32,
-                total_points
-            ).await;
+            let _ = state
+                .db
+                .update_team_results(*team_id, (rank_position + 1) as i32, total_points)
+                .await;
         }
-        
+
         // Also update teams that don't have any rankings yet (set them to last place)
         for team in teams {
             if !rankings.iter().any(|(tid, _)| *tid == team.id) {
                 let total_points = calculate_team_total_points(&state.db, team.id).await;
-                let _ = state.db.update_team_results(
-                    team.id,
-                    (rankings.len() + 1) as i32,
-                    total_points
-                ).await;
+                let _ = state
+                    .db
+                    .update_team_results(team.id, (rankings.len() + 1) as i32, total_points)
+                    .await;
             }
         }
     }
@@ -1498,8 +1548,11 @@ pub async fn submit_ballot(
 /// Calculate total speaker points for a team from all submitted voting ballots
 async fn calculate_team_total_points(db: &crate::database::Database, team_id: Uuid) -> Decimal {
     // Get all allocations for this team (speakers)
-    let allocations = db.list_allocations_by_team(team_id).await.unwrap_or_default();
-    
+    let allocations = db
+        .list_allocations_by_team(team_id)
+        .await
+        .unwrap_or_default();
+
     let mut total = Decimal::ZERO;
     for alloc in allocations {
         if let Ok(Some(avg_score)) = db.get_allocation_average_score(alloc.id).await {
@@ -1616,7 +1669,12 @@ pub async fn admin_get_match_ballots(
 
     let mut responses = Vec::new();
     for ballot in ballots {
-        let user = state.db.get_user_by_id(ballot.adjudicator_id).await.ok().flatten();
+        let user = state
+            .db
+            .get_user_by_id(ballot.adjudicator_id)
+            .await
+            .ok()
+            .flatten();
         let username = user.map(|u| u.username).unwrap_or_default();
 
         let scores = state
@@ -1627,10 +1685,22 @@ pub async fn admin_get_match_ballots(
 
         let mut score_responses = Vec::new();
         for score in scores {
-            let alloc = state.db.get_allocation_by_id(score.allocation_id).await.ok().flatten();
+            let alloc = state
+                .db
+                .get_allocation_by_id(score.allocation_id)
+                .await
+                .ok()
+                .flatten();
             let speaker_username = if let Some(a) = &alloc {
                 if let Some(user_id) = a.user_id {
-                    state.db.get_user_by_id(user_id).await.ok().flatten().map(|u| u.username).unwrap_or_default()
+                    state
+                        .db
+                        .get_user_by_id(user_id)
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|u| u.username)
+                        .unwrap_or_default()
                 } else {
                     a.guest_name.clone().unwrap_or_default()
                 }
@@ -1655,7 +1725,12 @@ pub async fn admin_get_match_ballots(
 
         let mut ranking_responses = Vec::new();
         for ranking in rankings {
-            let team = state.db.get_team_by_id(ranking.team_id).await.ok().flatten();
+            let team = state
+                .db
+                .get_team_by_id(ranking.team_id)
+                .await
+                .ok()
+                .flatten();
             ranking_responses.push(TeamRankingResponse {
                 id: ranking.id,
                 team_id: ranking.team_id,
@@ -1775,7 +1850,10 @@ async fn build_match_response(
         .flatten();
 
     let series_name = series.as_ref().map(|s| s.name.clone()).unwrap_or_default();
-    let _team_format = series.as_ref().map(|s| s.team_format).unwrap_or(TeamFormat::TwoTeam);
+    let _team_format = series
+        .as_ref()
+        .map(|s| s.team_format)
+        .unwrap_or(TeamFormat::TwoTeam);
 
     let teams = state
         .db

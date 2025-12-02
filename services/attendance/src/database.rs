@@ -84,7 +84,7 @@ impl Database {
         upcoming_only: bool,
     ) -> Result<(Vec<Event>, i64), sqlx::Error> {
         let offset = (page - 1) * per_page;
-        
+
         // Use start of today for "upcoming" filter so events on the current day stay visible
         let today_start = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap();
         let today_start_utc = chrono::DateTime::<Utc>::from_naive_utc_and_offset(today_start, Utc);

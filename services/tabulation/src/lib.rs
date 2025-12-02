@@ -51,10 +51,19 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         .route("/matches", get(handlers::list_matches))
         // Adjudicator ballot access
         .route("/matches/:match_id/my-ballot", get(handlers::get_my_ballot))
-        .route("/matches/:match_id/submit-ballot", post(handlers::submit_ballot))
-        .route("/matches/:match_id/submit-feedback", post(handlers::submit_feedback))
+        .route(
+            "/matches/:match_id/submit-ballot",
+            post(handlers::submit_ballot),
+        )
+        .route(
+            "/matches/:match_id/submit-feedback",
+            post(handlers::submit_feedback),
+        )
         // User performance
-        .route("/users/:user_id/performance", get(handlers::get_user_performance))
+        .route(
+            "/users/:user_id/performance",
+            get(handlers::get_user_performance),
+        )
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::auth_middleware,
@@ -71,16 +80,34 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         .route("/admin/matches", post(handlers::create_match))
         .route("/admin/matches/:match_id", put(handlers::update_match))
         .route("/admin/matches/:match_id", delete(handlers::delete_match))
-        .route("/admin/matches/:match_id/release", post(handlers::toggle_release))
-        .route("/admin/matches/:match_id/ballots", get(handlers::admin_get_match_ballots))
-        .route("/admin/matches/:match_id/history", get(handlers::get_allocation_history))
+        .route(
+            "/admin/matches/:match_id/release",
+            post(handlers::toggle_release),
+        )
+        .route(
+            "/admin/matches/:match_id/ballots",
+            get(handlers::admin_get_match_ballots),
+        )
+        .route(
+            "/admin/matches/:match_id/history",
+            get(handlers::get_allocation_history),
+        )
         // Team management
         .route("/admin/teams/:team_id", put(handlers::update_team))
         // Allocation management
-        .route("/admin/series/:series_id/pool", get(handlers::get_allocation_pool))
+        .route(
+            "/admin/series/:series_id/pool",
+            get(handlers::get_allocation_pool),
+        )
         .route("/admin/allocations", post(handlers::create_allocation))
-        .route("/admin/allocations/:allocation_id", put(handlers::update_allocation))
-        .route("/admin/allocations/:allocation_id", delete(handlers::delete_allocation))
+        .route(
+            "/admin/allocations/:allocation_id",
+            put(handlers::update_allocation),
+        )
+        .route(
+            "/admin/allocations/:allocation_id",
+            delete(handlers::delete_allocation),
+        )
         .route("/admin/allocations/swap", post(handlers::swap_allocations))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),

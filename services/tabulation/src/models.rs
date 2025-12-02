@@ -102,7 +102,7 @@ pub struct MatchSeries {
     pub event_id: Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub round_number: Option<i32>,  // Optional for friendly matches
+    pub round_number: Option<i32>, // Optional for friendly matches
     pub team_format: TeamFormat,
     pub allow_reply_speeches: bool,
     pub is_break_round: bool,
@@ -144,8 +144,8 @@ pub struct MatchTeam {
 pub struct Allocation {
     pub id: Uuid,
     pub match_id: Uuid,
-    pub user_id: Option<Uuid>,  // Nullable for guest allocations
-    pub guest_name: Option<String>,  // Name for non-user participants
+    pub user_id: Option<Uuid>,      // Nullable for guest allocations
+    pub guest_name: Option<String>, // Name for non-user participants
     pub role: AllocationRole,
     pub team_id: Option<Uuid>,
     pub two_team_speaker_role: Option<TwoTeamSpeakerRole>,
@@ -153,7 +153,7 @@ pub struct Allocation {
     pub is_chair: Option<bool>,
     pub allocated_at: DateTime<Utc>,
     pub allocated_by: Uuid,
-    pub was_checked_in: bool,  // Track if user was checked in when allocated
+    pub was_checked_in: bool, // Track if user was checked in when allocated
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -162,9 +162,9 @@ pub struct Allocation {
 pub struct AllocationWithUser {
     pub id: Uuid,
     pub match_id: Uuid,
-    pub user_id: Option<Uuid>,  // Nullable for guest allocations
-    pub guest_name: Option<String>,  // Name for guest participants
-    pub username: String,  // Will be guest_name if user_id is None
+    pub user_id: Option<Uuid>,      // Nullable for guest allocations
+    pub guest_name: Option<String>, // Name for guest participants
+    pub username: String,           // Will be guest_name if user_id is None
     pub role: AllocationRole,
     pub team_id: Option<Uuid>,
     pub two_team_speaker_role: Option<TwoTeamSpeakerRole>,
@@ -172,7 +172,7 @@ pub struct AllocationWithUser {
     pub is_chair: Option<bool>,
     pub allocated_at: DateTime<Utc>,
     pub allocated_by: Uuid,
-    pub was_checked_in: bool,  // Track if user was checked in when allocated
+    pub was_checked_in: bool, // Track if user was checked in when allocated
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -248,10 +248,14 @@ pub struct Claims {
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateSeriesRequest {
     pub event_id: Uuid,
-    #[validate(length(min = 1, max = 255, message = "Name must be between 1 and 255 characters"))]
+    #[validate(length(
+        min = 1,
+        max = 255,
+        message = "Name must be between 1 and 255 characters"
+    ))]
     pub name: String,
     pub description: Option<String>,
-    pub round_number: Option<i32>,  // Optional for friendly matches
+    pub round_number: Option<i32>, // Optional for friendly matches
     pub team_format: TeamFormat,
     #[serde(default)]
     pub allow_reply_speeches: bool,
@@ -316,8 +320,8 @@ pub struct UpdateTeamRequest {
 #[derive(Debug, Deserialize)]
 pub struct CreateAllocationRequest {
     pub match_id: Uuid,
-    pub user_id: Option<Uuid>,  // Optional for guest allocations
-    pub guest_name: Option<String>,  // Required if user_id is None
+    pub user_id: Option<Uuid>,      // Optional for guest allocations
+    pub guest_name: Option<String>, // Required if user_id is None
     pub role: AllocationRole,
     pub team_id: Option<Uuid>,
     pub two_team_speaker_role: Option<TwoTeamSpeakerRole>,
@@ -353,7 +357,7 @@ pub struct SubmitBallotRequest {
 #[derive(Debug, Deserialize)]
 pub struct SpeakerScoreInput {
     pub allocation_id: Uuid,
-    pub score: f64,  // Accept as f64, convert to Decimal when storing
+    pub score: f64, // Accept as f64, convert to Decimal when storing
     pub feedback: Option<String>,
 }
 
@@ -404,7 +408,7 @@ pub struct SeriesResponse {
     pub event_id: Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub round_number: Option<i32>,  // Optional for friendly matches
+    pub round_number: Option<i32>, // Optional for friendly matches
     pub team_format: TeamFormat,
     pub allow_reply_speeches: bool,
     pub is_break_round: bool,
@@ -470,7 +474,7 @@ pub struct SpeakerResponse {
     pub username: String,
     pub two_team_speaker_role: Option<TwoTeamSpeakerRole>,
     pub four_team_speaker_role: Option<FourTeamSpeakerRole>,
-    pub score: Option<Decimal>,  // Only shown if scores_released
+    pub score: Option<Decimal>, // Only shown if scores_released
 }
 
 #[derive(Debug, Serialize)]

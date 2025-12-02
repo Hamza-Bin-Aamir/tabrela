@@ -8,6 +8,17 @@ use rust_decimal::Decimal;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use uuid::Uuid;
 
+/// Parameters for updating an allocation
+pub struct UpdateAllocationParams {
+    pub allocation_id: Uuid,
+    pub role: Option<AllocationRole>,
+    pub team_id: Option<Uuid>,
+    pub two_team_speaker_role: Option<TwoTeamSpeakerRole>,
+    pub four_team_speaker_role: Option<FourTeamSpeakerRole>,
+    pub is_chair: Option<bool>,
+    pub allocated_by: Uuid,
+}
+
 #[derive(Clone)]
 pub struct Database {
     pool: PgPool,
@@ -37,21 +48,18 @@ impl Database {
     // ========================================================================
 
     pub async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<UserInfo>, sqlx::Error> {
-        sqlx::query_as::<_, UserInfo>(
-            "SELECT id, username FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_optional(&self.pool)
-        .await
+        sqlx::query_as::<_, UserInfo>("SELECT id, username FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn is_user_admin(&self, user_id: Uuid) -> Result<bool, sqlx::Error> {
-        let result: Option<(i64,)> = sqlx::query_as(
-            "SELECT COUNT(*) FROM admin_users WHERE user_id = $1"
-        )
-        .bind(user_id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let result: Option<(i64,)> =
+            sqlx::query_as("SELECT COUNT(*) FROM admin_users WHERE user_id = $1")
+                .bind(user_id)
+                .fetch_optional(&self.pool)
+                .await?;
 
         Ok(result.map(|(count,)| count > 0).unwrap_or(false))
     }
@@ -61,12 +69,10 @@ impl Database {
     // ========================================================================
 
     pub async fn get_event_by_id(&self, event_id: Uuid) -> Result<Option<EventInfo>, sqlx::Error> {
-        sqlx::query_as::<_, EventInfo>(
-            "SELECT id, title, is_locked FROM events WHERE id = $1"
-        )
-        .bind(event_id)
-        .fetch_optional(&self.pool)
-        .await
+        sqlx::query_as::<_, EventInfo>("SELECT id, title, is_locked FROM events WHERE id = $1")
+            .bind(event_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     // ========================================================================
@@ -97,13 +103,14 @@ impl Database {
         .await
     }
 
-    pub async fn get_series_by_id(&self, series_id: Uuid) -> Result<Option<MatchSeries>, sqlx::Error> {
-        sqlx::query_as::<_, MatchSeries>(
-            "SELECT * FROM match_series WHERE id = $1"
-        )
-        .bind(series_id)
-        .fetch_optional(&self.pool)
-        .await
+    pub async fn get_series_by_id(
+        &self,
+        series_id: Uuid,
+    ) -> Result<Option<MatchSeries>, sqlx::Error> {
+        sqlx::query_as::<_, MatchSeries>("SELECT * FROM match_series WHERE id = $1")
+            .bind(series_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn list_series_by_event(
@@ -114,12 +121,10 @@ impl Database {
     ) -> Result<(Vec<MatchSeries>, i64), sqlx::Error> {
         let offset = (page - 1) * per_page;
 
-        let total: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM match_series WHERE event_id = $1"
-        )
-        .bind(event_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM match_series WHERE event_id = $1")
+            .bind(event_id)
+            .fetch_one(&self.pool)
+            .await?;
 
         let series = sqlx::query_as::<_, MatchSeries>(
             r#"
@@ -177,12 +182,10 @@ impl Database {
     }
 
     pub async fn get_series_match_count(&self, series_id: Uuid) -> Result<i64, sqlx::Error> {
-        let result: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM matches WHERE series_id = $1"
-        )
-        .bind(series_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM matches WHERE series_id = $1")
+            .bind(series_id)
+            .fetch_one(&self.pool)
+            .await?;
         Ok(result.0)
     }
 
@@ -215,12 +218,10 @@ impl Database {
     }
 
     pub async fn get_match_by_id(&self, match_id: Uuid) -> Result<Option<Match>, sqlx::Error> {
-        sqlx::query_as::<_, Match>(
-            "SELECT * FROM matches WHERE id = $1"
-        )
-        .bind(match_id)
-        .fetch_optional(&self.pool)
-        .await
+        sqlx::query_as::<_, Match>("SELECT * FROM matches WHERE id = $1")
+            .bind(match_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn list_matches_by_series(
@@ -231,12 +232,10 @@ impl Database {
     ) -> Result<(Vec<Match>, i64), sqlx::Error> {
         let offset = (page - 1) * per_page;
 
-        let total: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM matches WHERE series_id = $1"
-        )
-        .bind(series_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM matches WHERE series_id = $1")
+            .bind(series_id)
+            .fetch_one(&self.pool)
+            .await?;
 
         let matches = sqlx::query_as::<_, Match>(
             r#"
@@ -420,12 +419,10 @@ impl Database {
     }
 
     pub async fn get_team_by_id(&self, team_id: Uuid) -> Result<Option<MatchTeam>, sqlx::Error> {
-        sqlx::query_as::<_, MatchTeam>(
-            "SELECT * FROM match_teams WHERE id = $1"
-        )
-        .bind(team_id)
-        .fetch_optional(&self.pool)
-        .await
+        sqlx::query_as::<_, MatchTeam>("SELECT * FROM match_teams WHERE id = $1")
+            .bind(team_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn list_teams_by_match(&self, match_id: Uuid) -> Result<Vec<MatchTeam>, sqlx::Error> {
@@ -559,7 +556,10 @@ impl Database {
     // Allocation Methods
     // ========================================================================
 
-    pub async fn create_allocation(&self, allocation: &Allocation) -> Result<Allocation, sqlx::Error> {
+    pub async fn create_allocation(
+        &self,
+        allocation: &Allocation,
+    ) -> Result<Allocation, sqlx::Error> {
         sqlx::query_as::<_, Allocation>(
             r#"
             INSERT INTO allocations (id, match_id, user_id, guest_name, role, team_id, 
@@ -587,13 +587,14 @@ impl Database {
         .await
     }
 
-    pub async fn get_allocation_by_id(&self, allocation_id: Uuid) -> Result<Option<Allocation>, sqlx::Error> {
-        sqlx::query_as::<_, Allocation>(
-            "SELECT * FROM allocations WHERE id = $1"
-        )
-        .bind(allocation_id)
-        .fetch_optional(&self.pool)
-        .await
+    pub async fn get_allocation_by_id(
+        &self,
+        allocation_id: Uuid,
+    ) -> Result<Option<Allocation>, sqlx::Error> {
+        sqlx::query_as::<_, Allocation>("SELECT * FROM allocations WHERE id = $1")
+            .bind(allocation_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn get_allocation_by_user_match(
@@ -602,7 +603,7 @@ impl Database {
         user_id: Uuid,
     ) -> Result<Option<Allocation>, sqlx::Error> {
         sqlx::query_as::<_, Allocation>(
-            "SELECT * FROM allocations WHERE match_id = $1 AND user_id = $2 LIMIT 1"
+            "SELECT * FROM allocations WHERE match_id = $1 AND user_id = $2 LIMIT 1",
         )
         .bind(match_id)
         .bind(user_id)
@@ -625,7 +626,10 @@ impl Database {
         .await
     }
 
-    pub async fn list_allocations_by_match(&self, match_id: Uuid) -> Result<Vec<AllocationWithUser>, sqlx::Error> {
+    pub async fn list_allocations_by_match(
+        &self,
+        match_id: Uuid,
+    ) -> Result<Vec<AllocationWithUser>, sqlx::Error> {
         sqlx::query_as::<_, AllocationWithUser>(
             r#"
             SELECT a.id, a.match_id, a.user_id, a.guest_name,
@@ -644,7 +648,10 @@ impl Database {
         .await
     }
 
-    pub async fn list_allocations_by_team(&self, team_id: Uuid) -> Result<Vec<AllocationWithUser>, sqlx::Error> {
+    pub async fn list_allocations_by_team(
+        &self,
+        team_id: Uuid,
+    ) -> Result<Vec<AllocationWithUser>, sqlx::Error> {
         sqlx::query_as::<_, AllocationWithUser>(
             r#"
             SELECT a.id, a.match_id, a.user_id, a.guest_name,
@@ -665,13 +672,7 @@ impl Database {
 
     pub async fn update_allocation(
         &self,
-        allocation_id: Uuid,
-        role: Option<AllocationRole>,
-        team_id: Option<Uuid>,
-        two_team_speaker_role: Option<TwoTeamSpeakerRole>,
-        four_team_speaker_role: Option<FourTeamSpeakerRole>,
-        is_chair: Option<bool>,
-        allocated_by: Uuid,
+        params: UpdateAllocationParams,
     ) -> Result<Allocation, sqlx::Error> {
         sqlx::query_as::<_, Allocation>(
             r#"
@@ -688,14 +689,14 @@ impl Database {
             RETURNING *
             "#,
         )
-        .bind(allocation_id)
-        .bind(role)
-        .bind(team_id)
-        .bind(two_team_speaker_role)
-        .bind(four_team_speaker_role)
-        .bind(is_chair)
+        .bind(params.allocation_id)
+        .bind(params.role)
+        .bind(params.team_id)
+        .bind(params.two_team_speaker_role)
+        .bind(params.four_team_speaker_role)
+        .bind(params.is_chair)
         .bind(Utc::now())
-        .bind(allocated_by)
+        .bind(params.allocated_by)
         .fetch_one(&self.pool)
         .await
     }
@@ -731,7 +732,10 @@ impl Database {
     // Allocation History Methods
     // ========================================================================
 
-    pub async fn create_allocation_history(&self, history: &AllocationHistory) -> Result<AllocationHistory, sqlx::Error> {
+    pub async fn create_allocation_history(
+        &self,
+        history: &AllocationHistory,
+    ) -> Result<AllocationHistory, sqlx::Error> {
         sqlx::query_as::<_, AllocationHistory>(
             r#"
             INSERT INTO allocation_history (id, allocation_id, match_id, user_id, guest_name, action,
@@ -765,12 +769,11 @@ impl Database {
     ) -> Result<(Vec<AllocationHistory>, i64), sqlx::Error> {
         let offset = (page - 1) * per_page;
 
-        let total: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM allocation_history WHERE match_id = $1"
-        )
-        .bind(match_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let total: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM allocation_history WHERE match_id = $1")
+                .bind(match_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         let history = sqlx::query_as::<_, AllocationHistory>(
             r#"
@@ -816,12 +819,10 @@ impl Database {
     }
 
     pub async fn get_ballot_by_id(&self, ballot_id: Uuid) -> Result<Option<Ballot>, sqlx::Error> {
-        sqlx::query_as::<_, Ballot>(
-            "SELECT * FROM ballots WHERE id = $1"
-        )
-        .bind(ballot_id)
-        .fetch_optional(&self.pool)
-        .await
+        sqlx::query_as::<_, Ballot>("SELECT * FROM ballots WHERE id = $1")
+            .bind(ballot_id)
+            .fetch_optional(&self.pool)
+            .await
     }
 
     pub async fn get_ballot_by_adjudicator_match(
@@ -830,7 +831,7 @@ impl Database {
         adjudicator_id: Uuid,
     ) -> Result<Option<Ballot>, sqlx::Error> {
         sqlx::query_as::<_, Ballot>(
-            "SELECT * FROM ballots WHERE match_id = $1 AND adjudicator_id = $2"
+            "SELECT * FROM ballots WHERE match_id = $1 AND adjudicator_id = $2",
         )
         .bind(match_id)
         .bind(adjudicator_id)
@@ -878,7 +879,10 @@ impl Database {
     // Speaker Score Methods
     // ========================================================================
 
-    pub async fn create_speaker_score(&self, score: &SpeakerScore) -> Result<SpeakerScore, sqlx::Error> {
+    pub async fn create_speaker_score(
+        &self,
+        score: &SpeakerScore,
+    ) -> Result<SpeakerScore, sqlx::Error> {
         sqlx::query_as::<_, SpeakerScore>(
             r#"
             INSERT INTO speaker_scores (id, ballot_id, allocation_id, score, feedback, created_at, updated_at)
@@ -897,16 +901,20 @@ impl Database {
         .await
     }
 
-    pub async fn list_speaker_scores_by_ballot(&self, ballot_id: Uuid) -> Result<Vec<SpeakerScore>, sqlx::Error> {
-        sqlx::query_as::<_, SpeakerScore>(
-            "SELECT * FROM speaker_scores WHERE ballot_id = $1"
-        )
-        .bind(ballot_id)
-        .fetch_all(&self.pool)
-        .await
+    pub async fn list_speaker_scores_by_ballot(
+        &self,
+        ballot_id: Uuid,
+    ) -> Result<Vec<SpeakerScore>, sqlx::Error> {
+        sqlx::query_as::<_, SpeakerScore>("SELECT * FROM speaker_scores WHERE ballot_id = $1")
+            .bind(ballot_id)
+            .fetch_all(&self.pool)
+            .await
     }
 
-    pub async fn delete_speaker_scores_by_ballot(&self, ballot_id: Uuid) -> Result<u64, sqlx::Error> {
+    pub async fn delete_speaker_scores_by_ballot(
+        &self,
+        ballot_id: Uuid,
+    ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query("DELETE FROM speaker_scores WHERE ballot_id = $1")
             .bind(ballot_id)
             .execute(&self.pool)
@@ -915,7 +923,10 @@ impl Database {
     }
 
     /// Get average score for a speaker allocation from all submitted voting ballots
-    pub async fn get_allocation_average_score(&self, allocation_id: Uuid) -> Result<Option<Decimal>, sqlx::Error> {
+    pub async fn get_allocation_average_score(
+        &self,
+        allocation_id: Uuid,
+    ) -> Result<Option<Decimal>, sqlx::Error> {
         let result: Option<(Option<Decimal>,)> = sqlx::query_as(
             r#"
             SELECT AVG(ss.score) as avg_score
@@ -933,7 +944,11 @@ impl Database {
         Ok(result.and_then(|(avg,)| avg))
     }
 
-    pub async fn get_average_speaker_score(&self, user_id: Uuid, event_id: Option<Uuid>) -> Result<Option<Decimal>, sqlx::Error> {
+    pub async fn get_average_speaker_score(
+        &self,
+        user_id: Uuid,
+        event_id: Option<Uuid>,
+    ) -> Result<Option<Decimal>, sqlx::Error> {
         let result: Option<(Option<Decimal>,)> = if let Some(event_id) = event_id {
             sqlx::query_as(
                 r#"
@@ -972,7 +987,10 @@ impl Database {
     // Team Ranking Methods
     // ========================================================================
 
-    pub async fn create_team_ranking(&self, ranking: &TeamRanking) -> Result<TeamRanking, sqlx::Error> {
+    pub async fn create_team_ranking(
+        &self,
+        ranking: &TeamRanking,
+    ) -> Result<TeamRanking, sqlx::Error> {
         sqlx::query_as::<_, TeamRanking>(
             r#"
             INSERT INTO team_rankings (id, ballot_id, team_id, rank, is_winner, created_at, updated_at)
@@ -991,16 +1009,22 @@ impl Database {
         .await
     }
 
-    pub async fn list_team_rankings_by_ballot(&self, ballot_id: Uuid) -> Result<Vec<TeamRanking>, sqlx::Error> {
+    pub async fn list_team_rankings_by_ballot(
+        &self,
+        ballot_id: Uuid,
+    ) -> Result<Vec<TeamRanking>, sqlx::Error> {
         sqlx::query_as::<_, TeamRanking>(
-            "SELECT * FROM team_rankings WHERE ballot_id = $1 ORDER BY rank ASC"
+            "SELECT * FROM team_rankings WHERE ballot_id = $1 ORDER BY rank ASC",
         )
         .bind(ballot_id)
         .fetch_all(&self.pool)
         .await
     }
 
-    pub async fn delete_team_rankings_by_ballot(&self, ballot_id: Uuid) -> Result<u64, sqlx::Error> {
+    pub async fn delete_team_rankings_by_ballot(
+        &self,
+        ballot_id: Uuid,
+    ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query("DELETE FROM team_rankings WHERE ballot_id = $1")
             .bind(ballot_id)
             .execute(&self.pool)
@@ -1010,7 +1034,10 @@ impl Database {
 
     /// Get aggregated team rankings from all submitted voting ballots for a match
     /// Returns (team_id, average_rank) tuples sorted by average rank ascending
-    pub async fn get_match_team_rankings(&self, match_id: Uuid) -> Result<Vec<(Uuid, f64)>, sqlx::Error> {
+    pub async fn get_match_team_rankings(
+        &self,
+        match_id: Uuid,
+    ) -> Result<Vec<(Uuid, f64)>, sqlx::Error> {
         let results: Vec<(Uuid, Option<f64>)> = sqlx::query_as(
             r#"
             SELECT tr.team_id, AVG(tr.rank::float8) as avg_rank
@@ -1025,7 +1052,8 @@ impl Database {
         .fetch_all(&self.pool)
         .await?;
 
-        Ok(results.into_iter()
+        Ok(results
+            .into_iter()
             .filter_map(|(team_id, avg)| avg.map(|a| (team_id, a)))
             .collect())
     }
@@ -1034,7 +1062,10 @@ impl Database {
     // Attendance Integration (for allocation pool)
     // ========================================================================
 
-    pub async fn get_checked_in_users_for_event(&self, event_id: Uuid) -> Result<Vec<AttendanceInfo>, sqlx::Error> {
+    pub async fn get_checked_in_users_for_event(
+        &self,
+        event_id: Uuid,
+    ) -> Result<Vec<AttendanceInfo>, sqlx::Error> {
         sqlx::query_as::<_, AttendanceInfo>(
             r#"
             SELECT id, event_id, user_id, is_checked_in, checked_in_at
@@ -1048,16 +1079,22 @@ impl Database {
     }
 
     /// Check if a specific user is checked in for an event
-    pub async fn is_user_checked_in(&self, event_id: Uuid, user_id: Uuid) -> Result<bool, sqlx::Error> {
+    pub async fn is_user_checked_in(
+        &self,
+        event_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
         let result: Option<(bool,)> = sqlx::query_as(
-            "SELECT is_checked_in FROM attendance_records WHERE event_id = $1 AND user_id = $2"
+            "SELECT is_checked_in FROM attendance_records WHERE event_id = $1 AND user_id = $2",
         )
         .bind(event_id)
         .bind(user_id)
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(result.map(|(is_checked_in,)| is_checked_in).unwrap_or(false))
+        Ok(result
+            .map(|(is_checked_in,)| is_checked_in)
+            .unwrap_or(false))
     }
 
     // ========================================================================
