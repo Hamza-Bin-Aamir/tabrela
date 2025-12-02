@@ -22,6 +22,11 @@ import ErrorPage from './pages/ErrorPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminMeritPage from './pages/AdminMeritPage'
 import AdminAwardsPage from './pages/AdminAwardsPage'
+import AdminMatchesPage from './pages/AdminMatchesPage'
+import AllocationPage from './pages/AllocationPage'
+import MatchDetailPage from './pages/MatchDetailPage'
+import BallotPage from './pages/BallotPage'
+import AdminPerformancePage from './pages/AdminPerformancePage'
 import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
 import EventFormPage from './pages/EventFormPage'
@@ -123,6 +128,48 @@ function App() {
                   <AdminRoute>
                     <AdminAwardsPage />
                   </AdminRoute>
+                }
+              />
+              {/* Match/Tabulation routes (admin only) */}
+              <Route
+                path="/admin/events/:eventId/matches"
+                element={
+                  <AdminRoute>
+                    <AdminMatchesPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/events/:eventId/series/:seriesId/allocate"
+                element={
+                  <AdminRoute>
+                    <AllocationPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/matches/:matchId"
+                element={
+                  <AdminRoute>
+                    <MatchDetailPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/events/:eventId/performance"
+                element={
+                  <AdminRoute>
+                    <AdminPerformancePage />
+                  </AdminRoute>
+                }
+              />
+              {/* Ballot page for adjudicators */}
+              <Route
+                path="/matches/:matchId/ballot"
+                element={
+                  <ProtectedRoute>
+                    <BallotPage />
+                  </ProtectedRoute>
                 }
               />
               {/* User profile routes - publicly shareable */}

@@ -141,6 +141,13 @@ export class AttendanceService {
     return httpClient.post<{ message: string; attendance: AttendanceRecord }>(`/events/${eventId}/revoke`, data);
   }
 
+  static async adminSetAvailability(eventId: string, userId: string, isAvailable: boolean): Promise<{ message: string; attendance: AttendanceRecord }> {
+    return httpClient.post<{ message: string; attendance: AttendanceRecord }>(`/events/${eventId}/set-availability`, {
+      user_id: userId,
+      is_available: isAvailable,
+    });
+  }
+
   // ========================================================================
   // Dashboard/Matrix Methods (Admin only)
   // ========================================================================

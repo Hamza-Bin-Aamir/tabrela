@@ -5,3 +5,5 @@ export { TokenManager } from './tokenManager';
 export { HttpClient } from './http';
 export { AuthService } from './auth';
 export { ProfileService, MeritService, AdminMeritService, AwardService, AdminAwardService } from './merit';
+export { AttendanceService } from './attendance';
+export { TabulationService } from './tabulation';
