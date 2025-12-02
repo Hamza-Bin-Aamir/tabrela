@@ -426,3 +426,320 @@ export interface AdminAwardListResponse {
   per_page: number;
   total_pages: number;
 }
+
+// ============================================================================
+// Tabulation/Match Types
+// ============================================================================
+
+// Enums
+export type TeamFormat = 'two_team' | 'four_team';
+export type TwoTeamPosition = 'government' | 'opposition';
+export type FourTeamPosition = 'opening_government' | 'opening_opposition' | 'closing_government' | 'closing_opposition';
+export type TwoTeamSpeakerRole = 
+  | 'prime_minister' 
+  | 'deputy_prime_minister' 
+  | 'government_whip'
+  | 'leader_of_opposition'
+  | 'deputy_leader_of_opposition'
+  | 'opposition_whip'
+  | 'government_reply'
+  | 'opposition_reply';
+export type FourTeamSpeakerRole =
+  | 'prime_minister'
+  | 'deputy_prime_minister'
+  | 'leader_of_opposition'
+  | 'deputy_leader_of_opposition'
+  | 'member_of_government'
+  | 'government_whip'
+  | 'member_of_opposition'
+  | 'opposition_whip';
+export type AllocationRole = 'speaker' | 'resource' | 'voting_adjudicator' | 'non_voting_adjudicator';
+export type MatchStatus = 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled';
+
+// Match Series
+export interface MatchSeries {
+  id: string;
+  event_id: string;
+  name: string;
+  description: string | null;
+  round_number: number | null;  // Optional for friendly matches
+  team_format: TeamFormat;
+  allow_reply_speeches: boolean;
+  is_break_round: boolean;
+  match_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSeriesRequest {
+  event_id: string;
+  name: string;
+  description?: string;
+  round_number?: number;  // Optional for friendly matches
+  team_format: TeamFormat;
+  allow_reply_speeches?: boolean;
+  is_break_round?: boolean;
+}
+
+export interface UpdateSeriesRequest {
+  name?: string;
+  description?: string;
+  allow_reply_speeches?: boolean;
+  is_break_round?: boolean;
+}
+
+export interface SeriesListResponse {
+  series: MatchSeries[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// Match
+export interface SpeakerInfo {
+  allocation_id: string;
+  user_id: string | null;  // Null for guest allocations
+  guest_name: string | null;  // Name for guest participants
+  username: string;  // Will be guest_name for non-users
+  two_team_speaker_role: TwoTeamSpeakerRole | null;
+  four_team_speaker_role: FourTeamSpeakerRole | null;
+  score: number | null;
+  was_checked_in: boolean;
+}
+
+export interface ResourceInfo {
+  allocation_id: string;
+  user_id: string | null;  // Null for guest allocations
+  guest_name: string | null;  // Name for guest participants
+  username: string;
+  was_checked_in: boolean;
+}
+
+export interface MatchTeam {
+  id: string;
+  two_team_position: TwoTeamPosition | null;
+  four_team_position: FourTeamPosition | null;
+  team_name: string | null;
+  institution: string | null;
+  final_rank: number | null;
+  total_speaker_points: number | null;
+  speakers: SpeakerInfo[];
+  resources: ResourceInfo[];
+}
+
+export interface AdjudicatorInfo {
+  allocation_id: string;
+  user_id: string | null;  // Null for guest allocations
+  guest_name: string | null;  // Name for guest participants
+  username: string;
+  is_voting: boolean;
+  is_chair: boolean;
+  has_submitted: boolean;
+  was_checked_in: boolean;
+}
+
+export interface MatchResponse {
+  id: string;
+  series_id: string;
+  series_name: string;
+  room_name: string | null;
+  motion: string | null;
+  info_slide: string | null;
+  status: MatchStatus;
+  scheduled_time: string | null;
+  scores_released: boolean;
+  rankings_released: boolean;
+  teams: MatchTeam[];
+  adjudicators: AdjudicatorInfo[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateMatchRequest {
+  series_id: string;
+  room_name?: string;
+  motion?: string;
+  info_slide?: string;
+  scheduled_time?: string;
+}
+
+export interface UpdateMatchRequest {
+  room_name?: string;
+  motion?: string;
+  info_slide?: string;
+  status?: MatchStatus;
+  scheduled_time?: string;
+}
+
+export interface ReleaseToggleRequest {
+  scores_released?: boolean;
+  rankings_released?: boolean;
+}
+
+export interface MatchListResponse {
+  matches: MatchResponse[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// Allocation
+export interface CurrentAllocationInfo {
+  match_id: string;
+  room_name: string | null;
+  role: AllocationRole;
+}
+
+export interface CheckedInUserInfo {
+  user_id: string;
+  username: string;
+  checked_in_at: string | null; // null if not checked in but available for allocation
+  is_allocated: boolean;
+  current_allocation: CurrentAllocationInfo | null;
+}
+
+export interface AllocationPoolResponse {
+  event_id: string;
+  series_id: string;
+  checked_in_users: CheckedInUserInfo[];
+  all_users?: CheckedInUserInfo[]; // all users in the system for friendly matches
+  total_checked_in: number;
+  total_allocated: number;
+  total_available: number;
+}
+
+export interface CreateAllocationRequest {
+  match_id: string;
+  user_id?: string;  // Optional for guest allocations
+  guest_name?: string;  // Required if user_id is not provided
+  role: AllocationRole;
+  team_id?: string;
+  two_team_speaker_role?: TwoTeamSpeakerRole;
+  four_team_speaker_role?: FourTeamSpeakerRole;
+  is_chair?: boolean;
+}
+
+export interface UpdateAllocationRequest {
+  role?: AllocationRole;
+  team_id?: string;
+  two_team_speaker_role?: TwoTeamSpeakerRole;
+  four_team_speaker_role?: FourTeamSpeakerRole;
+  is_chair?: boolean;
+}
+
+export interface SwapAllocationRequest {
+  allocation_id_1: string;
+  allocation_id_2: string;
+}
+
+export interface AllocationHistory {
+  id: string;
+  allocation_id: string | null;
+  match_id: string;
+  user_id: string;
+  action: string;
+  previous_role: AllocationRole | null;
+  new_role: AllocationRole | null;
+  previous_team_id: string | null;
+  new_team_id: string | null;
+  changed_by: string;
+  changed_at: string;
+  notes: string | null;
+}
+
+export interface AllocationHistoryResponse {
+  history: AllocationHistory[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// Ballot
+export interface SpeakerScoreResponse {
+  id: string;
+  allocation_id: string;
+  speaker_username: string;
+  score: number;
+  feedback: string | null;
+}
+
+export interface TeamRankingResponse {
+  id: string;
+  team_id: string;
+  team_name: string | null;
+  rank: number;
+  is_winner: boolean | null;
+}
+
+export interface BallotResponse {
+  id: string;
+  match_id: string;
+  adjudicator_id: string;
+  adjudicator_username: string;
+  is_voting: boolean;
+  is_submitted: boolean;
+  submitted_at: string | null;
+  notes: string | null;
+  speaker_scores: SpeakerScoreResponse[];
+  team_rankings: TeamRankingResponse[];
+}
+
+export interface SpeakerScoreInput {
+  allocation_id: string;
+  score: number;
+  feedback?: string;
+}
+
+export interface TeamRankingInput {
+  team_id: string;
+  rank: number;
+  is_winner?: boolean;
+}
+
+export interface SubmitBallotRequest {
+  match_id: string;
+  notes?: string;
+  speaker_scores: SpeakerScoreInput[];
+  team_rankings: TeamRankingInput[];
+}
+
+export interface SubmitFeedbackRequest {
+  match_id: string;
+  notes: string;
+}
+
+// Performance
+export interface RankingCount {
+  rank: number;
+  count: number;
+}
+
+export interface PerformanceResponse {
+  user_id: string;
+  username: string;
+  total_rounds: number;
+  rounds_as_speaker: number;
+  rounds_as_adjudicator: number;
+  average_speaker_score: number | null;
+  total_wins: number;
+  total_losses: number;
+  win_rate: number | null;
+  rankings: RankingCount[];
+}
+
+export interface PerformanceListResponse {
+  performances: PerformanceResponse[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+// Update team request
+export interface UpdateTeamRequest {
+  team_name?: string;
+  institution?: string;
+}

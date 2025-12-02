@@ -9,7 +9,7 @@ pub use database::Database;
 
 use axum::{
     middleware,
-    routing::{delete, get, patch, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use std::sync::Arc;
@@ -32,21 +32,37 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
 
     let cors = configure_cors(&config);
 
-    // Public routes (require authentication)
+    // Public routes (optional authentication - show public data with optional user context)
     let public_routes = Router::new()
-        .route("/events", get(handlers::list_events))
-        .route("/events/:event_id", get(handlers::get_event))
+        // Match viewing (respects release toggles)
+        .route("/matches/:match_id", get(handlers::get_match))
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware::optional_auth_middleware,
+        ))
+        .with_state(state.clone());
+
+    // Authenticated routes (require login)
+    let authenticated_routes = Router::new()
+        // Series viewing
+        .route("/series", get(handlers::list_series))
+        .route("/series/:series_id", get(handlers::get_series))
+        // Match listing
+        .route("/matches", get(handlers::list_matches))
+        // Adjudicator ballot access
+        .route("/matches/:match_id/my-ballot", get(handlers::get_my_ballot))
         .route(
-            "/events/:event_id/attendance",
-            get(handlers::get_event_attendance),
+            "/matches/:match_id/submit-ballot",
+            post(handlers::submit_ballot),
         )
         .route(
-            "/events/:event_id/my-attendance",
-            get(handlers::get_my_attendance),
+            "/matches/:match_id/submit-feedback",
+            post(handlers::submit_feedback),
         )
+        // User performance
         .route(
-            "/events/:event_id/availability",
-            post(handlers::set_availability),
+            "/users/:user_id/performance",
+            get(handlers::get_user_performance),
         )
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
@@ -54,22 +70,45 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
         ))
         .with_state(state.clone());
 
-    // Admin routes
+    // Admin routes - require admin privileges
     let admin_routes = Router::new()
-        .route("/events", post(handlers::create_event))
-        .route("/events/:event_id", patch(handlers::update_event))
-        .route("/events/:event_id", delete(handlers::delete_event))
-        .route("/events/:event_id/lock", post(handlers::lock_event))
-        .route("/events/:event_id/check-in", post(handlers::check_in_user))
+        // Series management
+        .route("/admin/series", post(handlers::create_series))
+        .route("/admin/series/:series_id", put(handlers::update_series))
+        .route("/admin/series/:series_id", delete(handlers::delete_series))
+        // Match management
+        .route("/admin/matches", post(handlers::create_match))
+        .route("/admin/matches/:match_id", put(handlers::update_match))
+        .route("/admin/matches/:match_id", delete(handlers::delete_match))
         .route(
-            "/events/:event_id/revoke",
-            post(handlers::revoke_availability),
+            "/admin/matches/:match_id/release",
+            post(handlers::toggle_release),
         )
         .route(
-            "/events/:event_id/set-availability",
-            post(handlers::admin_set_availability),
+            "/admin/matches/:match_id/ballots",
+            get(handlers::admin_get_match_ballots),
         )
-        .route("/attendance/matrix", get(handlers::get_attendance_matrix))
+        .route(
+            "/admin/matches/:match_id/history",
+            get(handlers::get_allocation_history),
+        )
+        // Team management
+        .route("/admin/teams/:team_id", put(handlers::update_team))
+        // Allocation management
+        .route(
+            "/admin/series/:series_id/pool",
+            get(handlers::get_allocation_pool),
+        )
+        .route("/admin/allocations", post(handlers::create_allocation))
+        .route(
+            "/admin/allocations/:allocation_id",
+            put(handlers::update_allocation),
+        )
+        .route(
+            "/admin/allocations/:allocation_id",
+            delete(handlers::delete_allocation),
+        )
+        .route("/admin/allocations/swap", post(handlers::swap_allocations))
         .route_layer(middleware::from_fn_with_state(
             state.clone(),
             auth_middleware::admin_middleware,
@@ -78,6 +117,7 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
 
     let app = Router::new()
         .merge(public_routes)
+        .merge(authenticated_routes)
         .merge(admin_routes)
         .route("/health", get(|| async { "OK" }))
         .layer(cors);
@@ -137,6 +177,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::DELETE,
                 http::Method::OPTIONS,
             ])
-            .allow_headers(Any)
+            .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
+            .allow_credentials(true)
     }
 }

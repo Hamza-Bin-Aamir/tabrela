@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AttendanceService } from '../services/attendance';
 import { AdminService } from '../services/admin';
+import { TabulationService } from '../services/tabulation';
 import { useAuth } from '../context/AuthContext';
-import type { Event, AttendanceRecord, EventType } from '../services/types';
+import type { Event, AttendanceRecord, EventType, MatchResponse, AdminUserListItem } from '../services/types';
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -12,19 +13,27 @@ export default function EventDetailPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [allUsers, setAllUsers] = useState<AdminUserListItem[]>([]);
   const [myAttendance, setMyAttendance] = useState<AttendanceRecord | null>(null);
+  const [myMatches, setMyMatches] = useState<MatchResponse[]>([]);
   const [stats, setStats] = useState({ total_available: 0, total_checked_in: 0 });
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
       try {
         const response = await AdminService.checkAdminStatus();
         setIsAdmin(response.is_admin);
+        if (response.is_admin) {
+          // Load all users for admin to mark availability
+          const usersResponse = await AdminService.listUsers(1, 200);
+          setAllUsers(usersResponse.users);
+        }
       } catch {
         setIsAdmin(false);
       }
@@ -50,6 +59,28 @@ export default function EventDetailPage() {
       // Find current user's attendance
       const myRecord = response.attendance.find((a) => a.user_id === user?.id);
       setMyAttendance(myRecord || null);
+
+      // Load matches for this event to find user's allocations
+      try {
+        const seriesResponse = await TabulationService.listSeries(eventId);
+        if (seriesResponse.series.length > 0 && user?.id) {
+          const matchesResponse = await TabulationService.listMatches({ 
+            seriesId: seriesResponse.series[0].id 
+          });
+          // Filter to only matches where the current user is allocated
+          const userMatches = matchesResponse.matches.filter(match => {
+            const isAdjudicator = match.adjudicators.some(adj => adj.user_id === user.id);
+            const isSpeaker = match.teams.some(team => 
+              team.speakers.some(speaker => speaker.user_id === user.id)
+            );
+            return isAdjudicator || isSpeaker;
+          });
+          setMyMatches(userMatches);
+        }
+      } catch {
+        // Silently fail - user may not have access to matches
+        setMyMatches([]);
+      }
     } catch (err) {
       setError('Failed to load event. Please try again.');
       console.error('Failed to load event:', err);
@@ -115,6 +146,25 @@ export default function EventDetailPage() {
       await loadEventData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to revoke availability');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleAdminSetAvailability = async (userId: string, isAvailable: boolean) => {
+    if (!eventId) return;
+
+    setActionLoading(userId);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await AttendanceService.adminSetAvailability(eventId, userId, isAvailable);
+      setSuccessMessage(isAvailable ? 'User marked as available.' : 'User marked as unavailable.');
+      setShowAddUserModal(false);
+      await loadEventData();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to set availability');
     } finally {
       setActionLoading(null);
     }
@@ -242,7 +292,13 @@ export default function EventDetailPage() {
               )}
             </div>
             {isAdmin && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <Link
+                  to={`/admin/events/${event.id}/matches`}
+                  className="px-3 py-1 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                >
+                  Manage Matches
+                </Link>
                 <Link
                   to={`/events/${event.id}/edit`}
                   className="px-3 py-1 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -356,10 +412,324 @@ export default function EventDetailPage() {
           </div>
         </div>
 
+        {/* My Matches - shown to users who are allocated to matches */}
+        {myMatches.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Matches</h2>
+            <div className="space-y-6">
+              {myMatches.map((match, index) => {
+                const isAdjudicator = match.adjudicators.some(adj => adj.user_id === user?.id);
+                const isSpeaker = match.teams.some(team => 
+                  team.speakers.some(speaker => speaker.user_id === user?.id)
+                );
+                const myAdjAllocation = match.adjudicators.find(adj => adj.user_id === user?.id);
+                const mySpeakerTeam = match.teams.find(team =>
+                  team.speakers.some(speaker => speaker.user_id === user?.id)
+                );
+                
+                // Helper to get position label
+                const getPositionLabel = (team: typeof match.teams[0]) => {
+                  if (team.two_team_position) {
+                    return team.two_team_position === 'government' ? 'Government' : 'Opposition';
+                  }
+                  if (team.four_team_position) {
+                    const labels: Record<string, string> = {
+                      opening_government: 'Opening Government',
+                      opening_opposition: 'Opening Opposition',
+                      closing_government: 'Closing Government',
+                      closing_opposition: 'Closing Opposition',
+                    };
+                    return labels[team.four_team_position] || team.four_team_position;
+                  }
+                  return 'Team';
+                };
+
+                // Helper to get speaker role label
+                const getSpeakerRoleLabel = (speaker: typeof match.teams[0]['speakers'][0]) => {
+                  if (speaker.two_team_speaker_role) {
+                    const roles: Record<string, string> = {
+                      prime_minister: 'PM',
+                      deputy_prime_minister: 'DPM',
+                      government_whip: 'GW',
+                      government_reply: 'GR',
+                      leader_of_opposition: 'LO',
+                      deputy_leader_of_opposition: 'DLO',
+                      opposition_whip: 'OW',
+                      opposition_reply: 'OR',
+                    };
+                    return roles[speaker.two_team_speaker_role] || speaker.two_team_speaker_role;
+                  }
+                  if (speaker.four_team_speaker_role) {
+                    const roles: Record<string, string> = {
+                      prime_minister: 'PM',
+                      deputy_prime_minister: 'DPM',
+                      member_of_government: 'MG',
+                      government_whip: 'GW',
+                      leader_of_opposition: 'LO',
+                      deputy_leader_of_opposition: 'DLO',
+                      member_of_opposition: 'MO',
+                      opposition_whip: 'OW',
+                    };
+                    return roles[speaker.four_team_speaker_role] || speaker.four_team_speaker_role;
+                  }
+                  return '';
+                };
+                
+                return (
+                  <div key={match.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Match Header */}
+                    <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {match.room_name || `Match ${index + 1}`}
+                          </h3>
+                          {match.motion && (
+                            <p className="text-sm text-gray-600 italic mt-1">"{match.motion}"</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            match.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            match.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                            match.status === 'published' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {match.status.replace('_', ' ')}
+                          </span>
+                          {isAdjudicator && (
+                            <Link
+                              to={`/matches/${match.id}/ballot`}
+                              className="px-3 py-1 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                            >
+                              {myAdjAllocation?.has_submitted ? 'View Ballot' : 'Submit Ballot'}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                      {/* Your role indicator */}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {isAdjudicator && (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
+                            ⚖️ You are {myAdjAllocation?.is_voting ? 'Voting' : 'Non-Voting'} Adjudicator {myAdjAllocation?.is_chair ? '(Chair)' : ''}
+                          </span>
+                        )}
+                        {isSpeaker && mySpeakerTeam && (
+                          <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
+                            🎤 You are speaking for {getPositionLabel(mySpeakerTeam)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Teams Section */}
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {match.teams.map((team) => {
+                          const isMyTeam = team.speakers.some(s => s.user_id === user?.id);
+                          const positionLabel = getPositionLabel(team);
+                          const isGov = positionLabel.toLowerCase().includes('government');
+                          
+                          return (
+                            <div 
+                              key={team.id} 
+                              className={`rounded-lg p-3 ${
+                                isMyTeam 
+                                  ? 'bg-indigo-50 border-2 border-indigo-300' 
+                                  : isGov 
+                                    ? 'bg-blue-50 border border-blue-200' 
+                                    : 'bg-purple-50 border border-purple-200'
+                              }`}
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <span className={`text-sm font-semibold ${
+                                  isGov ? 'text-blue-800' : 'text-purple-800'
+                                }`}>
+                                  {positionLabel}
+                                </span>
+                                {/* Show ranking if released - WIN/LOSS for 2-team, #rank for 4-team */}
+                                {match.rankings_released && team.final_rank && (
+                                  team.two_team_position ? (
+                                    // 2-team format: show WIN or LOSS
+                                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                                      team.final_rank === 1 
+                                        ? 'bg-green-500 text-white' 
+                                        : 'bg-red-500 text-white'
+                                    }`}>
+                                      {team.final_rank === 1 ? 'WIN' : 'LOSS'}
+                                    </span>
+                                  ) : (
+                                    // 4-team format: show rank number
+                                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                                      team.final_rank === 1 ? 'bg-yellow-400 text-yellow-900' :
+                                      team.final_rank === 2 ? 'bg-gray-300 text-gray-800' :
+                                      team.final_rank === 3 ? 'bg-orange-300 text-orange-900' :
+                                      'bg-gray-200 text-gray-700'
+                                    }`}>
+                                      #{team.final_rank}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                              {team.team_name && (
+                                <p className="text-xs text-gray-600 mb-2">{team.team_name}</p>
+                              )}
+                              {/* Speakers */}
+                              <div className="space-y-1">
+                                {team.speakers.map((speaker) => {
+                                  const isMe = speaker.user_id === user?.id;
+                                  return (
+                                    <div 
+                                      key={speaker.allocation_id}
+                                      className={`flex items-center justify-between text-sm ${
+                                        isMe ? 'font-semibold text-indigo-700' : 'text-gray-700'
+                                      }`}
+                                    >
+                                      <span>
+                                        {getSpeakerRoleLabel(speaker)} {speaker.username}
+                                        {isMe && ' (You)'}
+                                      </span>
+                                      {/* Show score if released */}
+                                      {match.scores_released && speaker.score !== null && (
+                                        <span className="text-xs font-medium bg-gray-200 px-1.5 py-0.5 rounded">
+                                          {Number(speaker.score).toFixed(1)} pts
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {/* Show total team points if released */}
+                              {match.scores_released && team.total_speaker_points !== null && (
+                                <div className="mt-2 pt-2 border-t border-gray-300 text-xs font-semibold text-gray-600">
+                                  Team Total: {Number(team.total_speaker_points).toFixed(1)} pts
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Adjudicators Section */}
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Adjudicators</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {match.adjudicators
+                            .sort((a, b) => {
+                              // Chair first, then voting, then non-voting
+                              if (a.is_chair && !b.is_chair) return -1;
+                              if (!a.is_chair && b.is_chair) return 1;
+                              if (a.is_voting && !b.is_voting) return -1;
+                              if (!a.is_voting && b.is_voting) return 1;
+                              return 0;
+                            })
+                            .map((adj) => {
+                              const isMe = adj.user_id === user?.id;
+                              return (
+                                <span
+                                  key={adj.allocation_id}
+                                  className={`px-2 py-1 text-xs rounded ${
+                                    isMe 
+                                      ? 'bg-indigo-100 text-indigo-800 font-semibold border border-indigo-300' 
+                                      : adj.is_chair
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : adj.is_voting
+                                          ? 'bg-gray-100 text-gray-800'
+                                          : 'bg-gray-50 text-gray-600'
+                                  }`}
+                                >
+                                  {adj.is_chair && '👑 '}
+                                  {adj.username}
+                                  {isMe && ' (You)'}
+                                  {!adj.is_voting && ' (Trainee)'}
+                                </span>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      {/* Results Summary - shown when rankings are released */}
+                      {match.rankings_released && match.status === 'completed' && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">🏆 Results</h4>
+                          {/* Check if it's a 2-team format */}
+                          {match.teams.some(t => t.two_team_position) ? (
+                            // 2-team format: show WIN/LOSS
+                            <div className="grid grid-cols-2 gap-2">
+                              {match.teams
+                                .sort((a, b) => (a.final_rank || 99) - (b.final_rank || 99))
+                                .map((team) => (
+                                  <div 
+                                    key={team.id}
+                                    className={`text-center p-3 rounded ${
+                                      team.final_rank === 1 
+                                        ? 'bg-green-100 border-2 border-green-400' 
+                                        : 'bg-red-100 border-2 border-red-400'
+                                    }`}
+                                  >
+                                    <div className={`text-lg font-bold ${
+                                      team.final_rank === 1 ? 'text-green-700' : 'text-red-700'
+                                    }`}>
+                                      {team.final_rank === 1 ? '🏆 WIN' : 'LOSS'}
+                                    </div>
+                                    <div className="text-sm text-gray-700 font-medium">{getPositionLabel(team)}</div>
+                                    {match.scores_released && team.total_speaker_points !== null && (
+                                      <div className="text-xs text-gray-500 mt-1">{Number(team.total_speaker_points).toFixed(1)} pts</div>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            // 4-team format: show rank cards
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              {match.teams
+                                .sort((a, b) => (a.final_rank || 99) - (b.final_rank || 99))
+                                .map((team) => (
+                                  <div 
+                                    key={team.id}
+                                    className={`text-center p-2 rounded ${
+                                      team.final_rank === 1 ? 'bg-yellow-100' :
+                                      team.final_rank === 2 ? 'bg-gray-100' :
+                                      team.final_rank === 3 ? 'bg-orange-100' :
+                                      'bg-gray-50'
+                                    }`}
+                                  >
+                                    <div className="text-lg font-bold">
+                                      {team.final_rank === 1 ? '🥇' : 
+                                       team.final_rank === 2 ? '🥈' : 
+                                       team.final_rank === 3 ? '🥉' : 
+                                       `#${team.final_rank}`}
+                                    </div>
+                                    <div className="text-xs text-gray-600">{getPositionLabel(team)}</div>
+                                    {match.scores_released && team.total_speaker_points !== null && (
+                                      <div className="text-xs text-gray-500 mt-1">{Number(team.total_speaker_points).toFixed(1)} pts</div>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Attendance List */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-gray-900">Attendance ({attendance.length})</h2>
+            {isAdmin && !event.is_locked && (
+              <button
+                onClick={() => setShowAddUserModal(true)}
+                className="px-3 py-1 text-sm font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                + Add User
+              </button>
+            )}
           </div>
 
           {attendance.length === 0 ? (
@@ -435,6 +805,74 @@ export default function EventDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Add User Modal */}
+        {showAddUserModal && isAdmin && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Mark User Availability</h3>
+                <button
+                  onClick={() => setShowAddUserModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <p className="text-sm text-gray-500 mb-4">
+                  Select users who haven't responded to mark their availability.
+                </p>
+                <div className="space-y-2">
+                  {allUsers
+                    .filter(u => !attendance.some(a => a.user_id === u.id))
+                    .map((userItem) => {
+                      const initials = userItem.username.substring(0, 2);
+                      return (
+                        <div
+                          key={userItem.id}
+                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-600 text-sm font-medium">
+                                {initials.toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{userItem.username}</p>
+                              <p className="text-xs text-gray-500">{userItem.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleAdminSetAvailability(userItem.id, true)}
+                              disabled={actionLoading === userItem.id}
+                              className="px-3 py-1 text-xs font-medium rounded-md bg-green-600 text-white hover:bg-green-700"
+                            >
+                              {actionLoading === userItem.id ? '...' : 'Available'}
+                            </button>
+                            <button
+                              onClick={() => handleAdminSetAvailability(userItem.id, false)}
+                              disabled={actionLoading === userItem.id}
+                              className="px-3 py-1 text-xs font-medium rounded-md bg-gray-600 text-white hover:bg-gray-700"
+                            >
+                              {actionLoading === userItem.id ? '...' : 'Unavailable'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {allUsers.filter(u => !attendance.some(a => a.user_id === u.id)).length === 0 && (
+                    <p className="text-center text-gray-500 py-4">
+                      All users have already responded.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

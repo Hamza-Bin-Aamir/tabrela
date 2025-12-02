@@ -105,6 +105,12 @@ if port_in_use 8083; then
     exit 1
 fi
 
+if port_in_use 8084; then
+    print_error "Port 8084 (Tabulation Service) is already in use"
+    print_info "Please stop the process using: lsof -ti:8084 | xargs kill -9"
+    exit 1
+fi
+
 if port_in_use 5000; then
     print_error "Port 5000 (Email Service) is already in use"
     print_info "Please stop the process using: lsof -ti:5000 | xargs kill -9"
@@ -196,6 +202,15 @@ cd ../..
 echo $MERIT_PID > logs/merit-service.pid
 print_success "Merit Service started (PID: $MERIT_PID)"
 
+# Start Tabulation Service
+print_info "Starting Tabulation Service on port ${TABULATION_PORT:-8084}..."
+cd services/tabulation
+HOST="${TABULATION_HOST:-0.0.0.0}" PORT="${TABULATION_PORT:-8084}" nohup cargo run --release > ../../logs/tabulation-service.log 2>&1 &
+TABULATION_PID=$!
+cd ../..
+echo $TABULATION_PID > logs/tabulation-service.pid
+print_success "Tabulation Service started (PID: $TABULATION_PID)"
+
 # Wait for auth service to be ready
 print_info "Waiting for services to initialize..."
 sleep 5
@@ -222,14 +237,16 @@ echo -e "${GREEN}Services:${NC}"
 echo "  📧 Email Service:       http://localhost:5000 (PID: $EMAIL_PID)"
 echo "  🔐 Auth Service:        http://localhost:8081 (PID: $AUTH_PID)"
 echo "  📋 Attendance Service:  http://localhost:8082 (PID: $ATTENDANCE_PID)"
-echo "  � Merit Service:       http://localhost:8083 (PID: $MERIT_PID)"
-echo "  �🌐 Frontend:            http://localhost:5173 (PID: $FRONTEND_PID)"
+echo "  🏆 Merit Service:       http://localhost:8083 (PID: $MERIT_PID)"
+echo "  🎯 Tabulation Service:  http://localhost:8084 (PID: $TABULATION_PID)"
+echo "  🌐 Frontend:            http://localhost:5173 (PID: $FRONTEND_PID)"
 echo ""
 echo -e "${BLUE}Logs:${NC}"
 echo "  Email Service:       tail -f logs/email-service.log"
 echo "  Auth Service:        tail -f logs/auth-service.log"
 echo "  Attendance Service:  tail -f logs/attendance-service.log"
 echo "  Merit Service:       tail -f logs/merit-service.log"
+echo "  Tabulation Service:  tail -f logs/tabulation-service.log"
 echo "  Frontend:            tail -f logs/frontend.log"
 echo ""
 echo -e "${YELLOW}To stop all services:${NC}"
@@ -251,6 +268,9 @@ cleanup() {
     fi
     if [ -f logs/merit-service.pid ]; then
         kill $(cat logs/merit-service.pid) 2>/dev/null || true
+    fi
+    if [ -f logs/tabulation-service.pid ]; then
+        kill $(cat logs/tabulation-service.pid) 2>/dev/null || true
     fi
     if [ -f logs/frontend.pid ]; then
         kill $(cat logs/frontend.pid) 2>/dev/null || true

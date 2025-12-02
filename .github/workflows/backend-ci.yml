@@ -26,6 +26,7 @@ jobs:
       auth: ${{ steps.changes.outputs.auth }}
       attendance: ${{ steps.changes.outputs.attendance }}
       merit: ${{ steps.changes.outputs.merit }}
+      tabulation: ${{ steps.changes.outputs.tabulation }}
       email: ${{ steps.changes.outputs.email }}
       migrations: ${{ steps.changes.outputs.migrations }}
     steps:
@@ -41,6 +42,8 @@ jobs:
               - 'services/attendance/**'
             merit:
               - 'services/merit/**'
+            tabulation:
+              - 'services/tabulation/**'
             email:
               - 'services/email/**'
             migrations:
@@ -52,11 +55,11 @@ jobs:
   rust-check:
     name: Rust Check
     needs: changes
-    if: ${{ needs.changes.outputs.auth == 'true' || needs.changes.outputs.attendance == 'true' || needs.changes.outputs.merit == 'true' || needs.changes.outputs.migrations == 'true' }}
+    if: ${{ needs.changes.outputs.auth == 'true' || needs.changes.outputs.attendance == 'true' || needs.changes.outputs.merit == 'true' || needs.changes.outputs.tabulation == 'true' || needs.changes.outputs.migrations == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [auth, attendance, merit]
+        service: [auth, attendance, merit, tabulation]
     steps:
       - uses: actions/checkout@v4
       
@@ -259,6 +262,62 @@ jobs:
         run: cargo test --verbose
 
   # ==========================================================================
+  # Tabulation Service Tests
+  # ==========================================================================
+  test-tabulation:
+    name: Test Tabulation Service
+    needs: [changes, rust-check]
+    if: ${{ needs.changes.outputs.tabulation == 'true' || needs.changes.outputs.migrations == 'true' }}
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tabrela_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/tabulation/target
+          key: ${{ runner.os }}-cargo-tabulation-${{ hashFiles('services/tabulation/Cargo.lock') }}
+      
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+      
+      - name: Run migrations
+        working-directory: ./services/tabulation
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+        run: cargo sqlx migrate run --source ../migrations
+      
+      - name: Run tests
+        working-directory: ./services/tabulation
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tabrela_test
+          JWT_SECRET: test-jwt-secret-for-ci
+          AUTH_SERVICE_URL: http://localhost:8081
+        run: cargo test --verbose
+
+  # ==========================================================================
   # Email Service Tests (Python)
   # ==========================================================================
   test-email:
@@ -298,7 +357,7 @@ jobs:
   # ==========================================================================
   build-images:
     name: Build Docker Images
-    needs: [test-auth, test-attendance, test-merit, test-email]
+    needs: [test-auth, test-attendance, test-merit, test-tabulation, test-email]
     if: github.ref == 'refs/heads/main' && always() && !contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
     
@@ -339,6 +398,17 @@ jobs:
           cache-to: type=gha,mode=max
         continue-on-error: true  # Dockerfile may not exist yet
       
+      - name: Build Tabulation Service Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/tabulation
+          file: ./services/tabulation/Dockerfile
+          push: false
+          tags: tabrela/tabulation-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true  # Dockerfile may not exist yet
+      
       - name: Build Email Service Image
         uses: docker/build-push-action@v5
         with:
@@ -353,7 +423,7 @@ jobs:
   # ==========================================================================
   ci-success:
     name: CI Success
-    needs: [rust-check, test-auth, test-attendance, test-merit, test-email]
+    needs: [rust-check, test-auth, test-attendance, test-merit, test-tabulation, test-email]
     if: always()
     runs-on: ubuntu-latest
     steps:
