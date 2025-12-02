@@ -72,9 +72,10 @@ FROM python:${PYTHON_VERSION}-slim AS python-builder
 
 WORKDIR /build/email
 
-# Create virtual environment for clean dependency isolation
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Create virtual environment at the SAME PATH it will be used in runtime
+# This is critical because venv hardcodes the Python path in script shebangs
+RUN python -m venv /app/email/venv
+ENV PATH="/app/email/venv/bin:$PATH"
 
 COPY services/email/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -85,18 +86,19 @@ COPY services/email/models.py .
 # ==============================================================================
 # Stage 3: Final runtime image
 # ==============================================================================
-FROM debian:bookworm-slim
-
+# Using Python slim image since we need Python for email service
+# This ensures the venv works correctly (same Python paths)
 ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION}-slim AS runtime
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
-    python3 \
-    python3-venv \
     supervisor \
     curl \
+    nginx \
+    gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app user
@@ -110,8 +112,8 @@ COPY --from=rust-builder /build/attendance/target/release/attendance /app/bin/at
 COPY --from=rust-builder /build/merit/target/release/merit /app/bin/merit
 COPY --from=rust-builder /build/tabulation/target/release/tabulation /app/bin/tabulation
 
-# Copy Python virtual environment (version-independent path)
-COPY --from=python-builder /opt/venv /app/email/venv
+# Copy Python virtual environment (must be at same path as created in builder)
+COPY --from=python-builder /app/email/venv /app/email/venv
 
 # Copy Python app files
 COPY --from=python-builder /build/email/app.py /app/email/app.py
@@ -123,6 +125,17 @@ COPY services/migrations /app/migrations
 # Copy supervisor config
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+# Copy nginx config template (will be processed by envsubst at startup)
+COPY docker/nginx.conf /etc/nginx/nginx.conf.template
+
+# Copy entrypoint script
+COPY docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Copy health check script
+COPY docker/healthcheck.sh /app/healthcheck.sh
+RUN chmod +x /app/healthcheck.sh
+
 # Create log directory
 RUN mkdir -p /var/log/tabrela && chown -R appuser:appuser /var/log/tabrela
 
@@ -133,16 +146,21 @@ RUN chmod +x /app/bin/*
 RUN chown -R appuser:appuser /app
 
 # Expose ports
-# Auth: 8081, Attendance: 8082, Merit: 8083, Tabulation: 8084
-# Note: Email service (5000) is internal only - not exposed to host
-EXPOSE 8081 8082 8083 8084
+# Only nginx is exposed - it reverse proxies to internal services
+# Railway will set PORT env var (usually 8080 or similar)
+# Internal: Auth: 8081, Attendance: 8082, Merit: 8083, Email: 5000
+EXPOSE 8080
 
-# Health check - checks if auth service is responding
-# IMPORTANT: Auth service must implement GET /health returning 200 OK
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8081/health || exit 1
+# Health check - checks ALL services, not just auth
+# Returns unhealthy if any service is down
+# Increased start-period to allow all services time to initialize
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /app/healthcheck.sh || exit 1
 
-# Run supervisor to manage all services
+# Run entrypoint script which:
+# 1. Processes nginx config with PORT env var
+# 2. Starts supervisord to manage all services
+#
 # Note: supervisord runs as root to manage child processes, but individual
 # services run as 'appuser' for security (see supervisord.conf)
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/app/entrypoint.sh"]

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
+import InstallPrompt from './components/InstallPrompt'
 import AdminRoute from './components/AdminRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
@@ -182,6 +183,7 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <InstallPrompt />
         </div>
       </AuthProvider>
     </BrowserRouter>

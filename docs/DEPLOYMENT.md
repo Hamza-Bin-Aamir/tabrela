@@ -1,7 +1,7 @@
 # Tabrela - Automated Deployment CI/CD for Railway and cPanel
 Hybrid deployment setup:
 - Frontend: cPanel shared hosting (Apache)
-- Backend: Railway.app (Docker)
+- Backend: Railway.app (Docker with nginx gateway)
 
 ## Architecture Overview
 
@@ -11,25 +11,32 @@ Hybrid deployment setup:
 └─────────────────────────────────────────────────────────────────┘
                     │                           │
                     ▼                           ▼
-    ┌───────────────────────────┐   ┌───────────────────────────┐
-    │   cPanel Shared Hosting   │   │       Railway.app         │
-    │   (Frontend - React SPA)  │   │   (Backend - Docker)      │
-    │                           │   │                           │
-    │   tabrela.yourdomain.com  │   │   tabrela-api.up.railway  │
-    │                           │   │   .app                    │
-    │   ┌───────────────────┐   │   │   ┌───────────────────┐   │
-    │   │   public_html/    │   │   │   │   Auth (8081)     │   │
-    │   │   - index.html    │   │   │   │   Attendance(8082)│   │
-    │   │   - assets/       │   │   │   │   Merit (8083)    │   │
-    │   │   - .htaccess     │   │   │   │   Tabulation(8084)│   │
-    │   └───────────────────┘   │   │   │   Email (5000)    │   │
-    └───────────────────────────┘   │   └───────────────────┘   │
-                                    │                           │
-                                    │   ┌───────────────────┐   │
-                                    │   │   PostgreSQL      │   │
-                                    │   │   (Railway DB)    │   │
-                                    │   └───────────────────┘   │
-                                    └───────────────────────────┘
+    ┌───────────────────────────┐   ┌───────────────────────────────────┐
+    │   cPanel Shared Hosting   │   │         Railway.app                │
+    │   (Frontend - React SPA)  │   │   (Backend - Docker Container)     │
+    │                           │   │                                    │
+    │   tabrela.yourdomain.com  │   │   tabrela-api.up.railway.app       │
+    │                           │   │                                    │
+    │   ┌───────────────────┐   │   │   ┌────────────────────────────┐   │
+    │   │   public_html/    │   │   │   │   Nginx Gateway (8080)     │   │
+    │   │   - index.html    │   │   │   │   /api/auth/* → Auth       │   │
+    │   │   - assets/       │   │   │   │   /api/attendance/* → Att  │   │
+    │   │   - .htaccess     │   │   │   │   /api/merit/* → Merit     │   │
+    │   └───────────────────┘   │   │   │   /health → Auth health    │   │
+    └───────────────────────────┘   │   └────────────────────────────┘   │
+                                    │              │                      │
+                                    │   ┌──────────┼──────────┐          │
+                                    │   ▼          ▼          ▼          │
+                                    │  Auth    Attendance   Merit        │
+                                    │  :8081     :8082      :8083        │
+                                    │              │                      │
+                                    │   Email Service :5000 (internal)   │
+                                    │                                    │
+                                    │   ┌───────────────────┐            │
+                                    │   │   PostgreSQL      │            │
+                                    │   │   (Railway DB)    │            │
+                                    │   └───────────────────┘            │
+                                    └────────────────────────────────────┘
 ```
 
 ---
@@ -41,7 +48,7 @@ Hybrid deployment setup:
 1. Go to [railway.app](https://railway.app) and sign up with GitHub
 2. Click **"New Project"** → **"Deploy from GitHub repo"**
 3. Select your `tabrela` repository
-4. Railway will detect the `railway.toml` and use `docker/Dockerfile.backend`
+4. Railway will detect the `railway.toml` and build from root `Dockerfile`
 
 ### 1.2 Add PostgreSQL Database
 
@@ -55,7 +62,7 @@ Click on your backend service → **"Variables"** → Add these:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `PORT` | Must be set to `8081` in Railway environment variables so Railway routes traffic to the auth service health check | `8081` |
+| `PORT` | Nginx gateway port (Railway routes to this) | `8080` |
 | `DATABASE_URL` | Auto-linked from PostgreSQL | `${{Postgres.DATABASE_URL}}` |
 | `JWT_SECRET` | Random 32+ char string | `your-super-secret-jwt-key` |
 | `JWT_ACCESS_TOKEN_EXPIRY` | Token expiry in seconds | `3600` |
@@ -82,7 +89,7 @@ After first deployment, Railway will give you a URL like:
 https://tabrela-backend-production.up.railway.app
 ```
 
-This is your `VITE_API_BASE_URL` for the frontend.
+This is your `VITE_API_URL` for the frontend.
 
 ---
 
@@ -145,7 +152,7 @@ Go to your GitHub repo → **Settings** → **Secrets and variables** → **Acti
 | `CPANEL_USER` | cPanel username | `username` |
 | `CPANEL_PORT` | SSH port (optional, defaults to 22) | `22` |
 | `CPANEL_PUBLIC_HTML` | Deployment path | `~/public_html` |
-| `VITE_API_BASE_URL` | Railway backend URL | `https://tabrela-api.up.railway.app` |
+| `VITE_API_URL` | Railway backend URL | `https://tabrela-api.up.railway.app` |
 
 ### Backend (Railway) Secrets:
 
@@ -183,11 +190,16 @@ Visit your domain: `https://tabrela.yourdomain.com`
 
 ### Check Backend
 ```bash
-# Health check
+# Health check (nginx → auth service)
 curl https://tabrela-api.up.railway.app/health
 
-# Auth service
-curl https://tabrela-api.up.railway.app/auth/health
+# Auth service (via nginx gateway)
+curl https://tabrela-api.up.railway.app/api/auth/csrf-token -H "Authorization: Bearer YOUR_TOKEN"
+
+# Test registration endpoint
+curl -X POST https://tabrela-api.up.railway.app/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test123"}'
 ```
 
 ### Railway Dashboard
