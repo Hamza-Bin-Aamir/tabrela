@@ -105,9 +105,10 @@ COPY services/webhook/app.py .
 # Using Python slim image since we need Python for email service
 # This ensures the venv works correctly (same Python paths)
 ARG PYTHON_VERSION
-ARG GIT_COMMIT_SHA
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
+# Re-declare ARG after FROM to use in this stage
+ARG GIT_COMMIT_SHA=unknown
 # Set Git commit SHA as environment variable for version tracking
 ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 
