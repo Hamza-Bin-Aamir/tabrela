@@ -3,8 +3,9 @@
 # Tabrela - Container Entrypoint Script
 # ==============================================================================
 # This script runs at container startup to:
-# 1. Process nginx config template with environment variables
-# 2. Start supervisord which manages all services
+# 1. Run database migrations
+# 2. Process nginx config template with environment variables
+# 3. Start supervisord which manages all services
 # ==============================================================================
 
 set -e
@@ -25,6 +26,17 @@ echo "Starting Tabrela backend services..."
 echo "Nginx will listen on port: $PORT"
 echo "CORS allowed origin: $ALLOWED_ORIGIN"
 echo "Git commit SHA: $GIT_COMMIT_SHA"
+
+# Run database migrations before starting services
+# This ensures the database schema is up to date before any service tries to connect
+echo "Running database migrations..."
+cd /app/migrations
+if /app/bin/sqlx migrate run --database-url "$DATABASE_URL"; then
+    echo "Migrations completed successfully"
+else
+    echo "Warning: Migration failed, services will attempt migration on startup"
+fi
+cd /app
 
 # Process nginx config template - substitute environment variables
 # Only substitute specific variables to avoid breaking nginx variables like $host, $request_uri

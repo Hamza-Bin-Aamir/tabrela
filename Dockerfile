@@ -70,6 +70,9 @@ RUN cargo build --release
 WORKDIR /build/tabulation
 RUN cargo build --release
 
+# Install sqlx-cli for running migrations at container startup
+RUN cargo install sqlx-cli --no-default-features --features native-tls,postgres
+
 # ==============================================================================
 # Stage 2: Build Python email service
 # ==============================================================================
@@ -132,6 +135,7 @@ COPY --from=rust-builder /build/auth/target/release/auth /app/bin/auth
 COPY --from=rust-builder /build/attendance/target/release/attendance /app/bin/attendance
 COPY --from=rust-builder /build/merit/target/release/merit /app/bin/merit
 COPY --from=rust-builder /build/tabulation/target/release/tabulation /app/bin/tabulation
+COPY --from=rust-builder /root/.cargo/bin/sqlx /app/bin/sqlx
 
 # Copy Python virtual environment (must be at same path as created in builder)
 COPY --from=python-builder /app/email/venv /app/email/venv
