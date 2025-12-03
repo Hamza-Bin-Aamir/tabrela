@@ -136,7 +136,8 @@ fn configure_cors(config: &Config) -> CorsLayer {
             .allow_headers(Any)
             .allow_credentials(false) // Cannot use credentials with wildcard origin
     } else {
-        let mut cors_layer = CorsLayer::new().allow_origin(Any);
+        // Specific origins mode (non-strict) - allow listed origins only
+        let mut cors_layer = CorsLayer::new();
         for origin in &config.allowed_origins {
             if origin != "*" {
                 if let Ok(header_value) = origin.parse::<http::header::HeaderValue>() {

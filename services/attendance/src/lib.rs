@@ -120,7 +120,8 @@ fn configure_cors(config: &Config) -> CorsLayer {
             .allow_headers(Any)
             .allow_credentials(false)
     } else {
-        let mut cors_layer = CorsLayer::new().allow_origin(Any);
+        // Specific origins mode (non-strict) - allow listed origins only
+        let mut cors_layer = CorsLayer::new();
         for origin in &config.allowed_origins {
             if origin != "*" {
                 if let Ok(header_value) = origin.parse::<http::header::HeaderValue>() {
@@ -137,6 +138,7 @@ fn configure_cors(config: &Config) -> CorsLayer {
                 http::Method::DELETE,
                 http::Method::OPTIONS,
             ])
-            .allow_headers(Any)
+            .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION])
+            .allow_credentials(true)
     }
 }
