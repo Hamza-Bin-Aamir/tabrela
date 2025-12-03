@@ -72,7 +72,8 @@ Click on your backend service → **"Variables"** → Add these:
 | `EMAIL_SERVICE_API_KEY` | API key for email service (must match `SERVICE_API_KEY` in email service) | `re_xxxxx` |
 | `FROM_EMAIL` | Sender email | `noreply@yourdomain.com` |
 | `RUST_LOG` | Log level | `info` |
-| `ALLOWED_ORIGINS` | Frontend URL | `https://tabrela.yourdomain.com` |
+| `ALLOWED_ORIGINS` | CORS allowed origins for auth service | `https://tabrela.yourdomain.com` |
+| `ALLOWED_ORIGIN` | **CORS origin for nginx gateway** (single origin) | `https://tabrela.yourdomain.com` |
 | `PASSWORD_PEPPER` | Extra secret for password hashing | `b7f3c8e2a1d4f6e9c0b2a8d7e5f1c3a4b6d8e0f2c4a6b8d0e2f4c6a8b0d2e4f6` |
 | `SERVICE_API_KEY` | API key for inter-service authentication | `service_xxxxx` |
 | `FRONTEND_URL` | Public URL of the frontend (used in email links) | `https://tabrela.yourdomain.com` |
