@@ -20,6 +20,7 @@ ATTENDANCE_URL="http://127.0.0.1:8082/health"
 MERIT_URL="http://127.0.0.1:8083/health"
 TABULATION_URL="http://127.0.0.1:8084/health"
 EMAIL_URL="http://127.0.0.1:5000/health"
+WEBHOOK_URL="http://127.0.0.1:5001/health"
 
 # Track overall health
 all_healthy=true
@@ -48,6 +49,7 @@ check_service "attendance" "$ATTENDANCE_URL"
 check_service "merit" "$MERIT_URL"
 check_service "tabulation" "$TABULATION_URL"
 check_service "email" "$EMAIL_URL"
+check_service "webhook" "$WEBHOOK_URL"
 
 # Output JSON
 if [ "$all_healthy" = true ]; then
