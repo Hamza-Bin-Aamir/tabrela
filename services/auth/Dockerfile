@@ -1,6 +1,10 @@
 # Build stage
 # Using nightly because some dependencies require edition2024 support
-FROM rustlang/rust:nightly-slim as builder
+# NOTE: This Dockerfile is for LOCAL DEVELOPMENT/TESTING only.
+# Production deployment uses the root Dockerfile which builds all services.
+#
+# Build from repo root: docker build -f services/auth/Dockerfile -t auth-service .
+FROM rustlang/rust:nightly-slim AS builder
 
 # Install required dependencies
 RUN apt-get update && apt-get install -y \
@@ -11,14 +15,14 @@ RUN apt-get update && apt-get install -y \
 # Create app directory
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml ./
-# Copy Cargo.lock if it exists (if not, cargo will generate it)
-COPY Cargo.loc[k] ./
+# Copy manifests (from repo root context)
+COPY services/auth/Cargo.toml ./
+COPY services/auth/Cargo.loc[k] ./
 
 # Copy source code
-COPY src ./src
-COPY migrations ./migrations
+COPY services/auth/src ./src
+# Migrations are shared across services
+COPY services/migrations ./migrations
 
 # Build for release
 RUN cargo build --release

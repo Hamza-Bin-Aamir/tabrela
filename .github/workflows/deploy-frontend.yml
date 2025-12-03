@@ -5,7 +5,10 @@
 # 1. Builds the React/Vite frontend
 # 2. Deploys compiled assets to cPanel shared hosting via rsync
 # 
-# Triggers on pushes to main branch (frontend changes only)
+# Triggers:
+# - On push to main (if frontend files changed)
+# - On repository_dispatch from webhook service (after Railway deploys backend)
+# - Manual trigger via workflow_dispatch
 #
 # Required GitHub Secrets:
 # - CPANEL_SSH_KEY: SSH private key for cPanel access
@@ -14,6 +17,12 @@
 # - CPANEL_PORT: SSH port (optional, defaults to 22)
 # - CPANEL_PUBLIC_HTML: Target path (e.g., ~/public_html)
 # - VITE_API_URL: Backend API URL (Railway URL, e.g., https://tabrela-backend.up.railway.app)
+#
+# Deployment Coordination:
+# 1. Code pushed to main → Backend CI runs → Railway builds & deploys
+# 2. Railway deployment succeeds → sends webhook to /webhook/railway-deploy
+# 3. Webhook service triggers this workflow via repository_dispatch
+# 4. Frontend builds and deploys to cPanel
 # ==============================================================================
 
 name: Build and Deploy Frontend
@@ -24,10 +33,16 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/deploy-frontend.yml'
+  
+  # Triggered by webhook service after Railway deployment succeeds
+  repository_dispatch:
+    types: [railway-deploy-success]
+  
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
   build-and-deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
     
     steps:

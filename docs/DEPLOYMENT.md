@@ -77,8 +77,18 @@ Click on your backend service → **"Variables"** → Add these:
 | `PASSWORD_PEPPER` | Extra secret for password hashing | `b7f3c8e2a1d4f6e9c0b2a8d7e5f1c3a4b6d8e0f2c4a6b8d0e2f4c6a8b0d2e4f6` |
 | `SERVICE_API_KEY` | API key for inter-service authentication | `service_xxxxx` |
 | `FRONTEND_URL` | Public URL of the frontend (used in email links) | `https://tabrela.yourdomain.com` |
+| `GITHUB_TOKEN` | **GitHub PAT with `repo` scope** (for webhook service) | `ghp_xxxxx` |
+| `GITHUB_REPO` | Repository for webhook triggers | `Hamza-Bin-Aamir/tabrela` |
 
-### 1.4 Get Railway Deploy Token
+### 1.4 Configure Railway Webhook
+
+This triggers frontend deployment after backend deploys successfully:
+
+1. Go to Railway project → **Settings** → **Webhooks**
+2. Add webhook URL: `https://your-backend-url/webhook/railway-deploy`
+3. Select **"Deploy"** event type
+
+### 1.5 Get Railway Deploy Token
 
 1. Go to **Account Settings** → **Tokens**
 2. Create a new token called `github-actions`
