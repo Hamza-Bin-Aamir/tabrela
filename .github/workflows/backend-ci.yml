@@ -5,11 +5,15 @@ on:
     branches: [main, develop]
     paths:
       - 'services/**'
+      - 'docker/**'
+      - 'Dockerfile'
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'services/**'
+      - 'docker/**'
+      - 'Dockerfile'
 
 env:
   CARGO_TERM_COLOR: always
@@ -353,10 +357,14 @@ jobs:
         run: pytest -v --cov=. --cov-report=term-missing
 
   # ==========================================================================
-  # Build Docker Images (on main branch only)
+  # Build Docker Image (on main branch only)
   # ==========================================================================
-  build-images:
-    name: Build Docker Images
+  # Builds the unified Docker image from root Dockerfile
+  # This image contains all services (auth, attendance, merit, tabulation, email)
+  # Railway will automatically deploy this image via railway.toml
+  # ==========================================================================
+  build-docker:
+    name: Build Docker Image
     needs: [test-auth, test-attendance, test-merit, test-tabulation, test-email]
     if: github.ref == 'refs/heads/main' && always() && !contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
@@ -367,54 +375,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Build Auth Service Image
+      - name: Build Unified Image
         uses: docker/build-push-action@v5
         with:
-          context: ./services/auth
+          context: .
+          file: ./Dockerfile
           push: false
-          tags: tabrela/auth-service:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      
-      - name: Build Attendance Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/attendance
-          file: ./services/attendance/Dockerfile
-          push: false
-          tags: tabrela/attendance-service:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        continue-on-error: true  # Dockerfile may not exist yet
-      
-      - name: Build Merit Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/merit
-          file: ./services/merit/Dockerfile
-          push: false
-          tags: tabrela/merit-service:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        continue-on-error: true  # Dockerfile may not exist yet
-      
-      - name: Build Tabulation Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/tabulation
-          file: ./services/tabulation/Dockerfile
-          push: false
-          tags: tabrela/tabulation-service:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        continue-on-error: true  # Dockerfile may not exist yet
-      
-      - name: Build Email Service Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/email
-          push: false
-          tags: tabrela/email-service:${{ github.sha }}
+          tags: tabrela/backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -423,7 +390,7 @@ jobs:
   # ==========================================================================
   ci-success:
     name: CI Success
-    needs: [rust-check, test-auth, test-attendance, test-merit, test-tabulation, test-email]
+    needs: [rust-check, test-auth, test-attendance, test-merit, test-tabulation, test-email, build-docker]
     if: always()
     runs-on: ubuntu-latest
     steps:

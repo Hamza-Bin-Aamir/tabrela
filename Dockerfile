@@ -7,8 +7,12 @@
 # - merit (Rust) - port 8083 - implements GET /health endpoint
 # - tabulation (Rust) - port 8084 - implements GET /health endpoint
 # - email (Python) - port 5000 - internal only, implements GET /health endpoint
+# - webhook (Python) - port 5001 - handles Railway deploy webhooks
 #
 # Uses multi-stage builds to minimize final image size
+#
+# Build args:
+# - GIT_COMMIT_SHA: Git commit SHA for version tracking (passed by CI/CD)
 #
 # IMPORTANT: All Rust services must implement a GET /health endpoint that
 # returns 200 OK for health checks to pass. See services/*/src/main.rs
@@ -18,6 +22,8 @@
 ARG PYTHON_VERSION=3.11
 # Rust version - use "latest" for most recent stable, or pin to specific version
 ARG RUST_VERSION=1.90
+# Git commit SHA for version tracking - passed from CI/CD
+ARG GIT_COMMIT_SHA=unknown
 
 # ==============================================================================
 # Stage 1: Build Rust services
@@ -83,13 +89,27 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY services/email/app.py .
 COPY services/email/models.py .
 
+# Build webhook service
+WORKDIR /build/webhook
+RUN python -m venv /app/webhook/venv
+ENV PATH="/app/webhook/venv/bin:$PATH"
+
+COPY services/webhook/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY services/webhook/app.py .
+
 # ==============================================================================
 # Stage 3: Final runtime image
 # ==============================================================================
 # Using Python slim image since we need Python for email service
 # This ensures the venv works correctly (same Python paths)
 ARG PYTHON_VERSION
+ARG GIT_COMMIT_SHA
 FROM python:${PYTHON_VERSION}-slim AS runtime
+
+# Set Git commit SHA as environment variable for version tracking
+ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -118,6 +138,10 @@ COPY --from=python-builder /app/email/venv /app/email/venv
 # Copy Python app files
 COPY --from=python-builder /build/email/app.py /app/email/app.py
 COPY --from=python-builder /build/email/models.py /app/email/models.py
+
+# Copy webhook service
+COPY --from=python-builder /app/webhook/venv /app/webhook/venv
+COPY --from=python-builder /build/webhook/app.py /app/webhook/app.py
 
 # Copy migrations
 COPY services/migrations /app/migrations
