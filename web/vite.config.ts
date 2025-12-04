@@ -31,4 +31,34 @@ export default defineConfig({
       },
     }),
   ],
+  // Dev server proxy to mimic nginx routing in production
+  // Routes /api/* requests to the appropriate backend services
+  server: {
+    proxy: {
+      // Auth service: /api/auth/* → localhost:8081/*
+      '/api/auth': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/auth/, ''),
+      },
+      // Attendance service: /api/attendance/* → localhost:8082/*
+      '/api/attendance': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/attendance/, ''),
+      },
+      // Merit service: /api/merit/* → localhost:8083/*
+      '/api/merit': {
+        target: 'http://localhost:8083',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/merit/, ''),
+      },
+      // Tabulation service: /api/tabulation/* → localhost:8084/*
+      '/api/tabulation': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/tabulation/, ''),
+      },
+    },
+  },
 })
