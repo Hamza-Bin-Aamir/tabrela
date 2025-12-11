@@ -85,10 +85,10 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadProfile = async () => {
       if (!username) return;
-      
+
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const profileData = await ProfileService.getProfile(username);
         setProfile(profileData);
@@ -106,7 +106,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadAwards = async () => {
       if (!username) return;
-      
+
       setAwardsLoading(true);
       try {
         const awardsData = await AwardService.getUserAwards(username);
@@ -124,7 +124,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadHistory = async () => {
       if (!isOwnProfile || !canSeeMerit) return;
-      
+
       setHistoryLoading(true);
       try {
         const historyData = await MeritService.getMyMeritHistory(historyPage, 10);
@@ -249,7 +249,7 @@ export default function ProfilePage() {
                 <dt className="text-sm font-medium text-gray-500">Year Joined</dt>
                 <dd className="mt-1 text-sm text-gray-900">{profile.year_joined}</dd>
               </div>
-              
+
               {/* Private/Admin fields */}
               {(ProfileService.isPrivateProfile(profile) || ProfileService.isAdminProfile(profile)) && (
                 <>
@@ -324,7 +324,7 @@ export default function ProfilePage() {
         {isOwnProfile && canSeeMerit && (
           <div className="mt-6 bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Merit History</h2>
-            
+
             {historyLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -419,7 +419,7 @@ export default function ProfilePage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             🏆 Awards & Achievements
           </h2>
-          
+
           {awardsLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>

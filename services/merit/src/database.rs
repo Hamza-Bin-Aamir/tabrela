@@ -166,7 +166,7 @@ impl Database {
 
         let history = sqlx::query_as::<_, MeritHistoryWithAdmin>(
             r#"
-            SELECT 
+            SELECT
                 mh.id,
                 mh.user_id,
                 mh.admin_id,
@@ -202,8 +202,8 @@ impl Database {
 
         let total: (i64,) = sqlx::query_as(
             r#"
-            SELECT COUNT(*) 
-            FROM users u 
+            SELECT COUNT(*)
+            FROM users u
             INNER JOIN user_merit um ON u.id = um.user_id
             WHERE u.email_verified = true
             "#,
@@ -213,7 +213,7 @@ impl Database {
 
         let users = sqlx::query_as::<_, UserMeritInfo>(
             r#"
-            SELECT 
+            SELECT
                 um.user_id,
                 u.username,
                 um.merit_points
@@ -243,7 +243,7 @@ impl Database {
     ) -> Result<Option<UserProfileRow>, sqlx::Error> {
         let user = sqlx::query_as::<_, UserProfileRow>(
             r#"
-            SELECT 
+            SELECT
                 u.id,
                 u.username,
                 u.email,
@@ -274,7 +274,7 @@ impl Database {
     ) -> Result<Option<UserProfileRow>, sqlx::Error> {
         let user = sqlx::query_as::<_, UserProfileRow>(
             r#"
-            SELECT 
+            SELECT
                 u.id,
                 u.username,
                 u.email,
@@ -459,7 +459,7 @@ impl Database {
     ) -> Result<Option<AwardWithAdmin>, sqlx::Error> {
         let award = sqlx::query_as::<_, AwardWithAdmin>(
             r#"
-            SELECT 
+            SELECT
                 a.id, a.user_id, u2.username,
                 a.title, a.description, a.tier,
                 a.awarded_by, u.username as awarded_by_username,
@@ -484,11 +484,11 @@ impl Database {
             SELECT id, user_id, title, description, tier, awarded_by, awarded_at, created_at, updated_at
             FROM awards
             WHERE user_id = $1
-            ORDER BY 
-                CASE tier 
-                    WHEN 'gold' THEN 1 
-                    WHEN 'silver' THEN 2 
-                    WHEN 'bronze' THEN 3 
+            ORDER BY
+                CASE tier
+                    WHEN 'gold' THEN 1
+                    WHEN 'silver' THEN 2
+                    WHEN 'bronze' THEN 3
                 END,
                 awarded_at DESC
             "#,
@@ -507,7 +507,7 @@ impl Database {
     ) -> Result<Vec<AwardHistoryWithAdmin>, sqlx::Error> {
         let history = sqlx::query_as::<_, AwardHistoryWithAdmin>(
             r#"
-            SELECT 
+            SELECT
                 ah.id, ah.award_id, ah.user_id, ah.admin_id,
                 u.username as admin_username,
                 ah.previous_tier, ah.new_tier, ah.reason, ah.created_at
@@ -567,7 +567,7 @@ impl Database {
     ) -> Result<Vec<AwardHistoryWithAdmin>, sqlx::Error> {
         let history = sqlx::query_as::<_, AwardHistoryWithAdmin>(
             r#"
-            SELECT 
+            SELECT
                 ah.id,
                 ah.award_id,
                 ah.user_id,
@@ -598,7 +598,7 @@ impl Database {
     ) -> Result<(Vec<AwardWithAdmin>, i64), sqlx::Error> {
         let awards = sqlx::query_as::<_, AwardWithAdmin>(
             r#"
-            SELECT 
+            SELECT
                 a.id,
                 a.user_id,
                 u.username,

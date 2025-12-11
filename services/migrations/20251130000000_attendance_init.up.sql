@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS attendance_records (
     availability_set_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Each user can only have one attendance record per event
     CONSTRAINT unique_user_event UNIQUE (event_id, user_id)
 );

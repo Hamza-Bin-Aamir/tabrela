@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::AppState;
 
-/// Middleware to authenticate requests using JWT access tokens
+/// Middleware to authenticate requests using PASETO access tokens
 pub async fn auth_middleware(
     State(state): State<Arc<AppState>>,
     mut request: Request,
@@ -42,7 +42,7 @@ pub async fn auth_middleware(
 
     // Validate the access token
     let claims = state
-        .jwt_service
+        .paseto_service
         .validate_access_token(token)
         .map_err(|_| {
             (
@@ -115,7 +115,7 @@ pub async fn admin_middleware(
 
     // Validate the access token
     let claims = state
-        .jwt_service
+        .paseto_service
         .validate_access_token(token)
         .map_err(|_| {
             (

@@ -366,10 +366,10 @@ impl Database {
     ) -> Result<Vec<AttendanceRecordWithUser>, sqlx::Error> {
         let records = sqlx::query_as::<_, AttendanceRecordWithUser>(
             r#"
-            SELECT 
-                ar.id, ar.event_id, ar.user_id, 
+            SELECT
+                ar.id, ar.event_id, ar.user_id,
                 u.username,
-                ar.is_available, ar.is_checked_in, ar.checked_in_by, ar.checked_in_at, 
+                ar.is_available, ar.is_checked_in, ar.checked_in_by, ar.checked_in_at,
                 ar.availability_set_at, ar.created_at, ar.updated_at
             FROM attendance_records ar
             JOIN users u ON ar.user_id = u.id
@@ -455,7 +455,7 @@ impl Database {
     pub async fn get_all_event_stats(&self) -> Result<Vec<(Uuid, i64, i64)>, sqlx::Error> {
         let stats: Vec<(Uuid, i64, i64)> = sqlx::query_as(
             r#"
-            SELECT 
+            SELECT
                 event_id,
                 COUNT(*) FILTER (WHERE is_available = true) as available_count,
                 COUNT(*) FILTER (WHERE is_checked_in = true) as checked_in_count
@@ -475,7 +475,7 @@ impl Database {
     ) -> Result<Vec<(Uuid, String, i64, i64)>, sqlx::Error> {
         let stats: Vec<(Uuid, String, i64, i64)> = sqlx::query_as(
             r#"
-            SELECT 
+            SELECT
                 u.id,
                 u.username,
                 COUNT(*) FILTER (WHERE ar.is_available = true) as available_count,
@@ -496,7 +496,7 @@ impl Database {
     pub async fn get_event_type_stats(&self) -> Result<Vec<(String, i64, f64)>, sqlx::Error> {
         let stats: Vec<(String, i64, f64)> = sqlx::query_as(
             r#"
-            SELECT 
+            SELECT
                 e.event_type,
                 COUNT(DISTINCT e.id)::BIGINT as event_count,
                 COALESCE(AVG(

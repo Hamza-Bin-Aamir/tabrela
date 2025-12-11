@@ -28,6 +28,29 @@ This project is built to be a **non-profit public utility.**
 * **Frontend:** React
 * **Backend:** Rust, Python
 * **Database:** Postgres
+
+## Getting Started
+
+### Development Setup
+
+1. **Install dependencies:**
+   - Rust (latest stable)
+   - Node.js 18+
+   - PostgreSQL
+   - (Optional) pre-commit: `pip install pre-commit`
+
+2. **Set up pre-commit hooks (recommended):**
+   ```bash
+   pre-commit install
+   ```
+   This ensures code quality checks run before each commit. See [docs/PRE_COMMIT_HOOKS.md](docs/PRE_COMMIT_HOOKS.md) for details.
+
+3. **Run development server:**
+   ```bash
+   ./run_dev.sh
+   ```
+
+For more details, see [README_DEVELOPMENT.md](README_DEVELOPMENT.md).
 * **Infra:** Docker + Microservices
 
 ## 3. Getting Started (Development)

@@ -21,7 +21,7 @@ ALTER TABLE allocations DROP CONSTRAINT IF EXISTS unique_user_match;
 
 -- Add a unique constraint per user-match-role instead
 -- (same user can't have the same role twice in the same match)
-ALTER TABLE allocations ADD CONSTRAINT unique_user_match_role 
+ALTER TABLE allocations ADD CONSTRAINT unique_user_match_role
     UNIQUE (match_id, user_id, role);
 
 -- Add check-in status to allocations for display purposes

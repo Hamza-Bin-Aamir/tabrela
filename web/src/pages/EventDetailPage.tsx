@@ -64,13 +64,13 @@ export default function EventDetailPage() {
       try {
         const seriesResponse = await TabulationService.listSeries(eventId);
         if (seriesResponse.series.length > 0 && user?.id) {
-          const matchesResponse = await TabulationService.listMatches({ 
-            seriesId: seriesResponse.series[0].id 
+          const matchesResponse = await TabulationService.listMatches({
+            seriesId: seriesResponse.series[0].id
           });
           // Filter to only matches where the current user is allocated
           const userMatches = matchesResponse.matches.filter(match => {
             const isAdjudicator = match.adjudicators.some(adj => adj.user_id === user.id);
-            const isSpeaker = match.teams.some(team => 
+            const isSpeaker = match.teams.some(team =>
               team.speakers.some(speaker => speaker.user_id === user.id)
             );
             return isAdjudicator || isSpeaker;
@@ -419,14 +419,14 @@ export default function EventDetailPage() {
             <div className="space-y-6">
               {myMatches.map((match, index) => {
                 const isAdjudicator = match.adjudicators.some(adj => adj.user_id === user?.id);
-                const isSpeaker = match.teams.some(team => 
+                const isSpeaker = match.teams.some(team =>
                   team.speakers.some(speaker => speaker.user_id === user?.id)
                 );
                 const myAdjAllocation = match.adjudicators.find(adj => adj.user_id === user?.id);
                 const mySpeakerTeam = match.teams.find(team =>
                   team.speakers.some(speaker => speaker.user_id === user?.id)
                 );
-                
+
                 // Helper to get position label
                 const getPositionLabel = (team: typeof match.teams[0]) => {
                   if (team.two_team_position) {
@@ -474,7 +474,7 @@ export default function EventDetailPage() {
                   }
                   return '';
                 };
-                
+
                 return (
                   <div key={match.id} className="border border-gray-200 rounded-lg overflow-hidden">
                     {/* Match Header */}
@@ -529,15 +529,15 @@ export default function EventDetailPage() {
                           const isMyTeam = team.speakers.some(s => s.user_id === user?.id);
                           const positionLabel = getPositionLabel(team);
                           const isGov = positionLabel.toLowerCase().includes('government');
-                          
+
                           return (
-                            <div 
-                              key={team.id} 
+                            <div
+                              key={team.id}
                               className={`rounded-lg p-3 ${
-                                isMyTeam 
-                                  ? 'bg-indigo-50 border-2 border-indigo-300' 
-                                  : isGov 
-                                    ? 'bg-blue-50 border border-blue-200' 
+                                isMyTeam
+                                  ? 'bg-indigo-50 border-2 border-indigo-300'
+                                  : isGov
+                                    ? 'bg-blue-50 border border-blue-200'
                                     : 'bg-purple-50 border border-purple-200'
                               }`}
                             >
@@ -552,8 +552,8 @@ export default function EventDetailPage() {
                                   team.two_team_position ? (
                                     // 2-team format: show WIN or LOSS
                                     <span className={`px-2 py-0.5 text-xs font-bold rounded ${
-                                      team.final_rank === 1 
-                                        ? 'bg-green-500 text-white' 
+                                      team.final_rank === 1
+                                        ? 'bg-green-500 text-white'
                                         : 'bg-red-500 text-white'
                                     }`}>
                                       {team.final_rank === 1 ? 'WIN' : 'LOSS'}
@@ -579,7 +579,7 @@ export default function EventDetailPage() {
                                 {team.speakers.map((speaker) => {
                                   const isMe = speaker.user_id === user?.id;
                                   return (
-                                    <div 
+                                    <div
                                       key={speaker.allocation_id}
                                       className={`flex items-center justify-between text-sm ${
                                         isMe ? 'font-semibold text-indigo-700' : 'text-gray-700'
@@ -629,8 +629,8 @@ export default function EventDetailPage() {
                                 <span
                                   key={adj.allocation_id}
                                   className={`px-2 py-1 text-xs rounded ${
-                                    isMe 
-                                      ? 'bg-indigo-100 text-indigo-800 font-semibold border border-indigo-300' 
+                                    isMe
+                                      ? 'bg-indigo-100 text-indigo-800 font-semibold border border-indigo-300'
                                       : adj.is_chair
                                         ? 'bg-purple-100 text-purple-800'
                                         : adj.is_voting
@@ -659,11 +659,11 @@ export default function EventDetailPage() {
                               {match.teams
                                 .sort((a, b) => (a.final_rank || 99) - (b.final_rank || 99))
                                 .map((team) => (
-                                  <div 
+                                  <div
                                     key={team.id}
                                     className={`text-center p-3 rounded ${
-                                      team.final_rank === 1 
-                                        ? 'bg-green-100 border-2 border-green-400' 
+                                      team.final_rank === 1
+                                        ? 'bg-green-100 border-2 border-green-400'
                                         : 'bg-red-100 border-2 border-red-400'
                                     }`}
                                   >
@@ -685,7 +685,7 @@ export default function EventDetailPage() {
                               {match.teams
                                 .sort((a, b) => (a.final_rank || 99) - (b.final_rank || 99))
                                 .map((team) => (
-                                  <div 
+                                  <div
                                     key={team.id}
                                     className={`text-center p-2 rounded ${
                                       team.final_rank === 1 ? 'bg-yellow-100' :
@@ -695,9 +695,9 @@ export default function EventDetailPage() {
                                     }`}
                                   >
                                     <div className="text-lg font-bold">
-                                      {team.final_rank === 1 ? '🥇' : 
-                                       team.final_rank === 2 ? '🥈' : 
-                                       team.final_rank === 3 ? '🥉' : 
+                                      {team.final_rank === 1 ? '🥇' :
+                                       team.final_rank === 2 ? '🥈' :
+                                       team.final_rank === 3 ? '🥉' :
                                        `#${team.final_rank}`}
                                     </div>
                                     <div className="text-xs text-gray-600">{getPositionLabel(team)}</div>
@@ -740,7 +740,7 @@ export default function EventDetailPage() {
             <div className="divide-y divide-gray-200">
               {attendance.map((record) => {
                 const initials = record.username.substring(0, 2);
-                
+
                 return (
                   <div key={record.id} className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">

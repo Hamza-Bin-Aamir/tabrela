@@ -5,7 +5,7 @@ import type { PerformanceResponse, Event } from '../services/types';
 
 export default function AdminPerformancePage() {
   const { eventId } = useParams<{ eventId: string }>();
-  
+
   const [event, setEvent] = useState<Event | null>(null);
   const [performances, setPerformances] = useState<PerformanceResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,13 +17,13 @@ export default function AdminPerformancePage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       // Get event details if eventId provided
       if (eventId) {
         const eventData = await AttendanceService.getEvent(eventId);
         setEvent(eventData);
       }
-      
+
       // For now, we'd need an endpoint to list all user performances
       // This is a placeholder - in reality you'd fetch from a paginated endpoint
       // For demo purposes, we'll just show an empty state
@@ -48,7 +48,7 @@ export default function AdminPerformancePage() {
   const sortedPerformances = [...filteredPerformances].sort((a, b) => {
     let aVal: number = 0;
     let bVal: number = 0;
-    
+
     switch (sortBy) {
       case 'average_score':
         aVal = a.average_speaker_score || 0;
@@ -63,7 +63,7 @@ export default function AdminPerformancePage() {
         bVal = b.total_rounds;
         break;
     }
-    
+
     return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
   });
 
@@ -83,7 +83,7 @@ export default function AdminPerformancePage() {
           <div className="flex items-center justify-between">
             <div>
               {event && (
-                <Link 
+                <Link
                   to={`/admin/events/${eventId}/matches`}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
@@ -120,7 +120,7 @@ export default function AdminPerformancePage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             <div className="flex gap-4">
               <select
                 value={sortBy}
@@ -131,7 +131,7 @@ export default function AdminPerformancePage() {
                 <option value="average_score">Sort by Avg Score</option>
                 <option value="win_rate">Sort by Win Rate</option>
               </select>
-              
+
               <button
                 onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -208,7 +208,7 @@ export default function AdminPerformancePage() {
                   sortedPerformances.map((perf) => (
                     <tr key={perf.user_id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Link 
+                        <Link
                           to={`/admin/users/${perf.user_id}/performance${eventId ? `?event_id=${eventId}` : ''}`}
                           className="text-blue-600 hover:text-blue-800 font-medium"
                         >
@@ -251,7 +251,7 @@ export default function AdminPerformancePage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-1">
                           {perf.rankings.map((r) => (
-                            <span 
+                            <span
                               key={r.rank}
                               className={`text-xs px-2 py-0.5 rounded ${
                                 r.rank === 1 ? 'bg-yellow-100 text-yellow-800' :

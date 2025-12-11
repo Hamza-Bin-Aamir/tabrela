@@ -68,3 +68,8 @@ target/doc/
 logs/
 
 .cargo/
+
+*.bak
+
+node_modules/
+dist/

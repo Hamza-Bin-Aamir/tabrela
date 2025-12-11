@@ -1,5 +1,5 @@
 -- Add new fields to users table
-ALTER TABLE users 
+ALTER TABLE users
     ADD COLUMN IF NOT EXISTS reg_number VARCHAR(50),
     ADD COLUMN IF NOT EXISTS year_joined INTEGER,
     ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20),

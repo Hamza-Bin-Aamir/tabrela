@@ -5,12 +5,11 @@ use axum::{
     response::Response,
     Json,
 };
-use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde_json::json;
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::{models::Claims, AppState};
+use crate::{paseto_utils, AppState};
 
 /// Middleware to authenticate requests using JWT access tokens
 pub async fn auth_middleware(
@@ -41,23 +40,14 @@ pub async fn auth_middleware(
 
     let token = &auth_header[7..]; // Remove "Bearer " prefix
 
-    // Validate the access token
-    let mut validation = Validation::default();
-    validation.validate_exp = true;
-
-    let token_data = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(state.config.jwt_secret.as_bytes()),
-        &validation,
-    )
-    .map_err(|_| {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({"error": "Invalid or expired token"})),
-        )
-    })?;
-
-    let claims = token_data.claims;
+    // Validate the PASETO access token
+    let claims =
+        paseto_utils::validate_paseto_token(token, &state.config.jwt_secret).map_err(|_| {
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error": "Invalid or expired token"})),
+            )
+        })?;
 
     // Verify it's an access token
     if claims.token_type != "access" {
@@ -111,23 +101,14 @@ pub async fn admin_middleware(
 
     let token = &auth_header[7..];
 
-    // Validate the access token
-    let mut validation = Validation::default();
-    validation.validate_exp = true;
-
-    let token_data = decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(state.config.jwt_secret.as_bytes()),
-        &validation,
-    )
-    .map_err(|_| {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({"error": "Invalid or expired token"})),
-        )
-    })?;
-
-    let claims = token_data.claims;
+    // Validate the PASETO access token
+    let claims =
+        paseto_utils::validate_paseto_token(token, &state.config.jwt_secret).map_err(|_| {
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error": "Invalid or expired token"})),
+            )
+        })?;
 
     if claims.token_type != "access" {
         return Err((

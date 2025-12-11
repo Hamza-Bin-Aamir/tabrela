@@ -42,9 +42,9 @@ export default function Header() {
     <header className="site-header" role="banner">
       <div className="container mx-auto px-6 flex items-center justify-between max-w-[1400px] h-full">
         <div className="flex items-center gap-2">
-          <img 
-            src="/logos/tabrela.png" 
-            alt="Tabrela Logo" 
+          <img
+            src="/logos/tabrela.png"
+            alt="Tabrela Logo"
             className="header-logo"
           />
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
@@ -110,19 +110,19 @@ export default function Header() {
         </nav>
 
         {/* Mobile navigation - slide-in menu */}
-        <nav 
+        <nav
           className={`mobile-nav ${mobileMenuOpen ? 'mobile-nav-open' : ''}`}
           aria-label="Mobile navigation"
         >
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="mobile-nav-link"
             onClick={closeMenu}
           >
             Home
           </Link>
-          <Link 
-            to="/about" 
+          <Link
+            to="/about"
             className="mobile-nav-link"
             onClick={closeMenu}
           >
@@ -130,8 +130,8 @@ export default function Header() {
           </Link>
           {isAuthenticated ? (
             <>
-              <Link 
-                to="/events" 
+              <Link
+                to="/events"
                 className="mobile-nav-link"
                 onClick={closeMenu}
               >
@@ -139,22 +139,22 @@ export default function Header() {
               </Link>
               {isAdmin && (
                 <>
-                  <Link 
-                    to="/attendance/dashboard" 
+                  <Link
+                    to="/attendance/dashboard"
                     className="mobile-nav-link"
                     onClick={closeMenu}
                   >
                     Attendance
                   </Link>
-                  <Link 
-                    to="/admin/merit" 
+                  <Link
+                    to="/admin/merit"
                     className="mobile-nav-link"
                     onClick={closeMenu}
                   >
                     Merit
                   </Link>
-                  <Link 
-                    to="/admin" 
+                  <Link
+                    to="/admin"
                     className="mobile-nav-link"
                     onClick={closeMenu}
                   >
@@ -162,7 +162,7 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              <Link 
+              <Link
                 to={`/users/${user?.username}`}
                 className="mobile-nav-link"
                 onClick={closeMenu}
@@ -175,15 +175,15 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className="mobile-nav-link"
                 onClick={closeMenu}
               >
                 Log in
               </Link>
-              <Link 
-                to="/signup" 
+              <Link
+                to="/signup"
                 className="mobile-nav-link"
                 onClick={closeMenu}
               >
@@ -209,7 +209,7 @@ export default function Header() {
 
         {/* Backdrop overlay for mobile menu */}
         {mobileMenuOpen && (
-          <div 
+          <div
             className="mobile-nav-backdrop"
             onClick={closeMenu}
             aria-hidden="true"

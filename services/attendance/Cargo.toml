@@ -14,7 +14,7 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate", "derive", "macros"] }
 
 # Security - JWT validation
-jsonwebtoken = "9"
+pasetors = { version = "0.6", features = ["v4", "std"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

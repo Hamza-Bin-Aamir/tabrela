@@ -30,13 +30,13 @@ check_service() {
     local name=$1
     local url=$2
     local status="unhealthy"
-    
+
     if curl -sf --max-time 2 "$url" > /dev/null 2>&1; then
         status="healthy"
     else
         all_healthy=false
     fi
-    
+
     if [ -n "$results" ]; then
         results="$results,"
     fi

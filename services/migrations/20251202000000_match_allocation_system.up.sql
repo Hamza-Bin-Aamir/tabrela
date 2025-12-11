@@ -22,7 +22,7 @@ CREATE TYPE four_team_position AS ENUM ('opening_government', 'opening_oppositio
 -- Enum for speaker roles in 2-team format
 CREATE TYPE two_team_speaker_role AS ENUM (
     'prime_minister',
-    'deputy_prime_minister', 
+    'deputy_prime_minister',
     'government_whip',
     'leader_of_opposition',
     'deputy_leader_of_opposition',
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS match_series (
     created_by UUID NOT NULL,  -- References users table
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     CONSTRAINT unique_event_round UNIQUE (event_id, round_number)
 );
 
@@ -92,11 +92,11 @@ CREATE TABLE IF NOT EXISTS matches (
     info_slide TEXT,  -- Additional context for the motion
     status match_status NOT NULL DEFAULT 'draft',
     scheduled_time TIMESTAMPTZ,
-    
+
     -- Release controls (FR-15 to FR-18)
     scores_released BOOLEAN NOT NULL DEFAULT false,
     rankings_released BOOLEAN NOT NULL DEFAULT false,
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -108,24 +108,24 @@ CREATE TABLE IF NOT EXISTS matches (
 CREATE TABLE IF NOT EXISTS match_teams (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
-    
+
     -- For 2-team format
     two_team_position two_team_position,
-    
+
     -- For 4-team format
     four_team_position four_team_position,
-    
+
     -- Team identification
     team_name VARCHAR(255),  -- Optional custom name
     institution VARCHAR(255),  -- School/university name
-    
+
     -- Results (populated after balloting)
     final_rank INTEGER,  -- 1-4 for BP, or 1-2 for 2-team
     total_speaker_points DECIMAL(8,2),
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Constraints
     CONSTRAINT valid_position CHECK (
         (two_team_position IS NOT NULL AND four_team_position IS NULL) OR
@@ -142,33 +142,33 @@ CREATE TABLE IF NOT EXISTS allocations (
     match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,  -- References users table
     role allocation_role NOT NULL,
-    
+
     -- For speakers: which team and position
     team_id UUID REFERENCES match_teams(id) ON DELETE SET NULL,
-    
+
     -- Speaker role (only for speakers)
     two_team_speaker_role two_team_speaker_role,
     four_team_speaker_role four_team_speaker_role,
-    
+
     -- For adjudicators: chair status
     is_chair BOOLEAN DEFAULT false,  -- Chair of the judging panel
-    
+
     -- Timestamps for tracking changes (FR-09)
     allocated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     allocated_by UUID NOT NULL,  -- Admin who made the allocation
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Each user can only have one allocation per match
     CONSTRAINT unique_user_match UNIQUE (match_id, user_id),
-    
+
     -- Speaker role validation
     CONSTRAINT valid_speaker_role CHECK (
-        role != 'speaker' OR 
+        role != 'speaker' OR
         (team_id IS NOT NULL AND (two_team_speaker_role IS NOT NULL OR four_team_speaker_role IS NOT NULL))
     ),
-    
+
     -- Adjudicator validation
     CONSTRAINT valid_adjudicator CHECK (
         role NOT IN ('voting_adjudicator', 'non_voting_adjudicator') OR
@@ -184,20 +184,20 @@ CREATE TABLE IF NOT EXISTS ballots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
     adjudicator_id UUID NOT NULL,  -- References users table
-    
+
     -- Ballot type based on adjudicator role
     is_voting BOOLEAN NOT NULL,  -- true = voting adjudicator, false = trainee
-    
+
     -- Status
     is_submitted BOOLEAN NOT NULL DEFAULT false,
     submitted_at TIMESTAMPTZ,
-    
+
     -- General feedback/notes (FR-11, FR-12)
     notes TEXT,  -- Qualitative feedback
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Each adjudicator can only have one ballot per match
     CONSTRAINT unique_adjudicator_match UNIQUE (match_id, adjudicator_id)
 );
@@ -210,19 +210,19 @@ CREATE TABLE IF NOT EXISTS speaker_scores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ballot_id UUID NOT NULL REFERENCES ballots(id) ON DELETE CASCADE,
     allocation_id UUID NOT NULL REFERENCES allocations(id) ON DELETE CASCADE,
-    
+
     -- Score (typically 50-100 range in debate)
     score DECIMAL(5,2) NOT NULL,
-    
+
     -- Individual speaker feedback
     feedback TEXT,
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Each speaker gets one score per ballot
     CONSTRAINT unique_speaker_ballot UNIQUE (ballot_id, allocation_id),
-    
+
     -- Score range validation
     CONSTRAINT valid_score CHECK (score >= 0 AND score <= 100)
 );
@@ -235,19 +235,19 @@ CREATE TABLE IF NOT EXISTS team_rankings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ballot_id UUID NOT NULL REFERENCES ballots(id) ON DELETE CASCADE,
     team_id UUID NOT NULL REFERENCES match_teams(id) ON DELETE CASCADE,
-    
+
     -- Rank: 1-4 for BP format, 1-2 for two-team format
     rank INTEGER NOT NULL,
-    
+
     -- Win/Loss for 2-team format
     is_winner BOOLEAN,
-    
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Each team gets one ranking per ballot
     CONSTRAINT unique_team_ballot UNIQUE (ballot_id, team_id),
-    
+
     -- Rank validation (1-4)
     CONSTRAINT valid_rank CHECK (rank >= 1 AND rank <= 4)
 );
@@ -261,18 +261,18 @@ CREATE TABLE IF NOT EXISTS allocation_history (
     allocation_id UUID REFERENCES allocations(id) ON DELETE SET NULL,
     match_id UUID NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
-    
+
     -- What changed
     action VARCHAR(50) NOT NULL,  -- 'created', 'updated', 'deleted'
     previous_role allocation_role,
     new_role allocation_role,
     previous_team_id UUID,
     new_team_id UUID,
-    
+
     -- Who made the change
     changed_by UUID NOT NULL,
     changed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
+
     -- Additional context
     notes TEXT
 );

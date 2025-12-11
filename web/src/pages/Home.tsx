@@ -151,7 +151,7 @@ export default function Home() {
       try {
         // Get upcoming events
         const eventsResponse = await AttendanceService.listEvents(1, 1, undefined, true);
-        
+
         if (eventsResponse.events.length === 0) {
           setUpcomingEvent(null);
           setEventLoading(false);
@@ -261,6 +261,7 @@ export default function Home() {
     };
 
     loadUpcomingEvent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user]);
 
   // Format speaker role for display
@@ -558,7 +559,7 @@ export default function Home() {
                         <h3 className="text-2xl font-bold text-gray-900">{upcomingEvent.title}</h3>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2 text-gray-600">
                       <div className="flex items-center gap-2">
                         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

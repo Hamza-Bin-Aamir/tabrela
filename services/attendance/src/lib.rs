@@ -3,6 +3,7 @@ pub mod config;
 pub mod database;
 pub mod handlers;
 pub mod models;
+pub mod paseto_utils;
 
 pub use config::Config;
 pub use database::Database;

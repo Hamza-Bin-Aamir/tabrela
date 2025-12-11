@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { TabulationService } from '../services/tabulation';
 import { AttendanceService } from '../services/attendance';
-import type { 
-  MatchSeries, 
-  MatchResponse, 
+import type {
+  MatchSeries,
+  MatchResponse,
   Event,
   AllocationRole,
   TwoTeamSpeakerRole,
@@ -37,7 +37,7 @@ export default function AllocationPage() {
   // Filter states
   const [userFilter, setUserFilter] = useState<'all' | 'checked-in' | 'not-checked-in'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Selection states
   const [selectedUser, setSelectedUser] = useState<AvailableUser | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
@@ -84,10 +84,10 @@ export default function AllocationPage() {
     try {
       // Get checked-in users from attendance
       const checkedInResponse = await AttendanceService.getEventAttendance(eventId);
-      
+
       // Build allocations map from matches
       const userAllocations = new Map<string, { match_id: string; room_name: string | null; role: AllocationRole }[]>();
-      
+
       for (const match of currentMatches) {
         // Speakers (only track registered users, not guests)
         for (const team of match.teams) {
@@ -172,11 +172,11 @@ export default function AllocationPage() {
 
       await TabulationService.createAllocation(data);
       setSuccessMessage(`${selectedUser.username} allocated successfully!`);
-      
+
       // Reset selection
       setSelectedUser(null);
       setSelectedTeam(null);
-      
+
       // Reload data
       await loadData();
     } catch (err: unknown) {
@@ -288,7 +288,7 @@ export default function AllocationPage() {
                   {availableUsers.filter(u => u.is_checked_in).length} checked in • {availableUsers.length} total
                 </p>
               </div>
-              
+
               {/* Filters */}
               <div className="p-4 border-b border-gray-200 space-y-3">
                 <input

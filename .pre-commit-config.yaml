@@ -1,0 +1,147 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+
+# Don't warn about unstaged files - this is normal workflow
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  # Conventional Commits check
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.1.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-json
+        exclude: 'tsconfig.*\.json$'
+      - id: mixed-line-ending
+
+  # Rust formatting and linting
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt (auth)
+        entry: bash -c 'cd services/auth && cargo fmt --all -- --check'
+        language: system
+        files: '^services/auth/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-fmt-attendance
+        name: cargo fmt (attendance)
+        entry: bash -c 'cd services/attendance && cargo fmt --all -- --check'
+        language: system
+        files: '^services/attendance/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-fmt-merit
+        name: cargo fmt (merit)
+        entry: bash -c 'cd services/merit && cargo fmt --all -- --check'
+        language: system
+        files: '^services/merit/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-fmt-tabulation
+        name: cargo fmt (tabulation)
+        entry: bash -c 'cd services/tabulation && cargo fmt --all -- --check'
+        language: system
+        files: '^services/tabulation/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-check
+        name: cargo check (auth)
+        entry: bash -c 'cd services/auth && cargo check --all-features'
+        language: system
+        files: '^services/auth/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-check-attendance
+        name: cargo check (attendance)
+        entry: bash -c 'cd services/attendance && cargo check --all-features'
+        language: system
+        files: '^services/attendance/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-check-merit
+        name: cargo check (merit)
+        entry: bash -c 'cd services/merit && cargo check --all-features'
+        language: system
+        files: '^services/merit/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-check-tabulation
+        name: cargo check (tabulation)
+        entry: bash -c 'cd services/tabulation && cargo check --all-features'
+        language: system
+        files: '^services/tabulation/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy (auth)
+        entry: bash -c 'cd services/auth && cargo clippy --all-features -- -D warnings'
+        language: system
+        files: '^services/auth/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-clippy-attendance
+        name: cargo clippy (attendance)
+        entry: bash -c 'cd services/attendance && cargo clippy --all-features -- -D warnings'
+        language: system
+        files: '^services/attendance/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-clippy-merit
+        name: cargo clippy (merit)
+        entry: bash -c 'cd services/merit && cargo clippy --all-features -- -D warnings'
+        language: system
+        files: '^services/merit/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-clippy-tabulation
+        name: cargo clippy (tabulation)
+        entry: bash -c 'cd services/tabulation && cargo clippy --all-features -- -D warnings'
+        language: system
+        files: '^services/tabulation/.*\.rs$'
+        pass_filenames: false
+
+      - id: cargo-audit
+        name: cargo audit (all services)
+        entry: bash -c 'for dir in services/*/; do (cd "$dir" && cargo audit || true); done'
+        language: system
+        files: '^services/.*/Cargo\.(toml|lock)$'
+        pass_filenames: false
+
+      # Frontend checks
+      - id: typescript-check
+        name: TypeScript type check
+        entry: bash -c 'cd web && npm run type-check'
+        language: system
+        files: '^web/.*\.(ts|tsx)$'
+        pass_filenames: false
+
+      - id: eslint
+        name: ESLint
+        entry: bash -c 'cd web && npm run lint'
+        language: system
+        files: '^web/.*\.(ts|tsx|js|jsx)$'
+        pass_filenames: false
+
+      - id: frontend-build
+        name: Frontend build check
+        entry: bash -c 'cd web && npm run build'
+        language: system
+        files: '^web/(src|public)/.*'
+        pass_filenames: false

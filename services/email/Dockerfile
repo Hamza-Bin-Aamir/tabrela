@@ -2,7 +2,7 @@
 # Email Service - Standalone Development Dockerfile
 # ==============================================================================
 # NOTE: This Dockerfile is for LOCAL DEVELOPMENT ONLY.
-# 
+#
 # For production deployment, use: docker/Dockerfile.backend
 # which builds all services (auth, attendance, merit, email) into a single image.
 #

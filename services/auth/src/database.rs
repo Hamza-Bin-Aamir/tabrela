@@ -784,8 +784,8 @@ impl Database {
             ),
         >(
             r#"
-            SELECT 
-                u.id, u.username, u.email, u.reg_number, u.year_joined, u.phone_number, 
+            SELECT
+                u.id, u.username, u.email, u.reg_number, u.year_joined, u.phone_number,
                 u.email_verified, u.created_at,
                 CASE WHEN a.user_id IS NOT NULL THEN true ELSE false END as is_admin
             FROM users u

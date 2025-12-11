@@ -82,7 +82,7 @@ impl Database {
     pub async fn create_series(&self, series: &MatchSeries) -> Result<MatchSeries, sqlx::Error> {
         sqlx::query_as::<_, MatchSeries>(
             r#"
-            INSERT INTO match_series (id, event_id, name, description, round_number, team_format, 
+            INSERT INTO match_series (id, event_id, name, description, round_number, team_format,
                 allow_reply_speeches, is_break_round, created_by, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
@@ -128,8 +128,8 @@ impl Database {
 
         let series = sqlx::query_as::<_, MatchSeries>(
             r#"
-            SELECT * FROM match_series 
-            WHERE event_id = $1 
+            SELECT * FROM match_series
+            WHERE event_id = $1
             ORDER BY round_number ASC
             LIMIT $2 OFFSET $3
             "#,
@@ -196,7 +196,7 @@ impl Database {
     pub async fn create_match(&self, match_record: &Match) -> Result<Match, sqlx::Error> {
         sqlx::query_as::<_, Match>(
             r#"
-            INSERT INTO matches (id, series_id, room_name, motion, info_slide, status, 
+            INSERT INTO matches (id, series_id, room_name, motion, info_slide, status,
                 scheduled_time, scores_released, rankings_released, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             RETURNING *
@@ -239,8 +239,8 @@ impl Database {
 
         let matches = sqlx::query_as::<_, Match>(
             r#"
-            SELECT * FROM matches 
-            WHERE series_id = $1 
+            SELECT * FROM matches
+            WHERE series_id = $1
             ORDER BY room_name ASC, created_at ASC
             LIMIT $2 OFFSET $3
             "#,
@@ -398,7 +398,7 @@ impl Database {
     pub async fn create_team(&self, team: &MatchTeam) -> Result<MatchTeam, sqlx::Error> {
         sqlx::query_as::<_, MatchTeam>(
             r#"
-            INSERT INTO match_teams (id, match_id, two_team_position, four_team_position, 
+            INSERT INTO match_teams (id, match_id, two_team_position, four_team_position,
                 team_name, institution, final_rank, total_speaker_points, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING *
@@ -428,8 +428,8 @@ impl Database {
     pub async fn list_teams_by_match(&self, match_id: Uuid) -> Result<Vec<MatchTeam>, sqlx::Error> {
         sqlx::query_as::<_, MatchTeam>(
             r#"
-            SELECT * FROM match_teams 
-            WHERE match_id = $1 
+            SELECT * FROM match_teams
+            WHERE match_id = $1
             ORDER BY two_team_position, four_team_position
             "#,
         )
@@ -562,8 +562,8 @@ impl Database {
     ) -> Result<Allocation, sqlx::Error> {
         sqlx::query_as::<_, Allocation>(
             r#"
-            INSERT INTO allocations (id, match_id, user_id, guest_name, role, team_id, 
-                two_team_speaker_role, four_team_speaker_role, is_chair, 
+            INSERT INTO allocations (id, match_id, user_id, guest_name, role, team_id,
+                two_team_speaker_role, four_team_speaker_role, is_chair,
                 allocated_at, allocated_by, was_checked_in, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             RETURNING *
@@ -633,7 +633,7 @@ impl Database {
         sqlx::query_as::<_, AllocationWithUser>(
             r#"
             SELECT a.id, a.match_id, a.user_id, a.guest_name,
-                COALESCE(u.username, a.guest_name, 'Unknown') as username, 
+                COALESCE(u.username, a.guest_name, 'Unknown') as username,
                 a.role, a.team_id,
                 a.two_team_speaker_role, a.four_team_speaker_role, a.is_chair,
                 a.allocated_at, a.allocated_by, a.was_checked_in
@@ -655,7 +655,7 @@ impl Database {
         sqlx::query_as::<_, AllocationWithUser>(
             r#"
             SELECT a.id, a.match_id, a.user_id, a.guest_name,
-                COALESCE(u.username, a.guest_name, 'Unknown') as username, 
+                COALESCE(u.username, a.guest_name, 'Unknown') as username,
                 a.role, a.team_id,
                 a.two_team_speaker_role, a.four_team_speaker_role, a.is_chair,
                 a.allocated_at, a.allocated_by, a.was_checked_in
@@ -777,8 +777,8 @@ impl Database {
 
         let history = sqlx::query_as::<_, AllocationHistory>(
             r#"
-            SELECT * FROM allocation_history 
-            WHERE match_id = $1 
+            SELECT * FROM allocation_history
+            WHERE match_id = $1
             ORDER BY changed_at DESC
             LIMIT $2 OFFSET $3
             "#,
@@ -799,7 +799,7 @@ impl Database {
     pub async fn create_ballot(&self, ballot: &Ballot) -> Result<Ballot, sqlx::Error> {
         sqlx::query_as::<_, Ballot>(
             r#"
-            INSERT INTO ballots (id, match_id, adjudicator_id, is_voting, is_submitted, 
+            INSERT INTO ballots (id, match_id, adjudicator_id, is_voting, is_submitted,
                 submitted_at, notes, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
@@ -842,8 +842,8 @@ impl Database {
     pub async fn list_ballots_by_match(&self, match_id: Uuid) -> Result<Vec<Ballot>, sqlx::Error> {
         sqlx::query_as::<_, Ballot>(
             r#"
-            SELECT * FROM ballots 
-            WHERE match_id = $1 
+            SELECT * FROM ballots
+            WHERE match_id = $1
             ORDER BY is_voting DESC, created_at ASC
             "#,
         )
@@ -932,8 +932,8 @@ impl Database {
             SELECT AVG(ss.score) as avg_score
             FROM speaker_scores ss
             JOIN ballots b ON ss.ballot_id = b.id
-            WHERE ss.allocation_id = $1 
-              AND b.is_submitted = true 
+            WHERE ss.allocation_id = $1
+              AND b.is_submitted = true
               AND b.is_voting = true
             "#,
         )
@@ -1110,7 +1110,7 @@ impl Database {
         let result: (i64, i64, i64) = if let Some(event_id) = event_id {
             sqlx::query_as(
                 r#"
-                SELECT 
+                SELECT
                     COUNT(DISTINCT a.match_id) as total,
                     COUNT(DISTINCT CASE WHEN a.role = 'speaker' THEN a.match_id END) as speaker,
                     COUNT(DISTINCT CASE WHEN a.role IN ('voting_adjudicator', 'non_voting_adjudicator') THEN a.match_id END) as adjudicator
@@ -1127,7 +1127,7 @@ impl Database {
         } else {
             sqlx::query_as(
                 r#"
-                SELECT 
+                SELECT
                     COUNT(DISTINCT match_id) as total,
                     COUNT(DISTINCT CASE WHEN role = 'speaker' THEN match_id END) as speaker,
                     COUNT(DISTINCT CASE WHEN role IN ('voting_adjudicator', 'non_voting_adjudicator') THEN match_id END) as adjudicator
@@ -1152,7 +1152,7 @@ impl Database {
         let result: (i64, i64) = if let Some(event_id) = event_id {
             sqlx::query_as(
                 r#"
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN tr.is_winner = true THEN 1 END) as wins,
                     COUNT(CASE WHEN tr.is_winner = false THEN 1 END) as losses
                 FROM allocations a
@@ -1171,7 +1171,7 @@ impl Database {
         } else {
             sqlx::query_as(
                 r#"
-                SELECT 
+                SELECT
                     COUNT(CASE WHEN tr.is_winner = true THEN 1 END) as wins,
                     COUNT(CASE WHEN tr.is_winner = false THEN 1 END) as losses
                 FROM allocations a

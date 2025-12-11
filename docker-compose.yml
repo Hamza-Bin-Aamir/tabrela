@@ -2,7 +2,7 @@
 # Tabrela - Docker Compose Configuration
 # ==============================================================================
 # This file orchestrates the entire Tabrela backend stack.
-# 
+#
 # Usage:
 #   Production: docker-compose up -d
 #   Development: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
@@ -32,31 +32,31 @@ services:
     environment:
       # Database
       - DATABASE_URL=${DATABASE_URL}
-      
+
       # Auth Service Config
       - JWT_SECRET=${AUTH_JWT_SECRET}
       - JWT_ACCESS_TOKEN_EXPIRY=${JWT_ACCESS_TOKEN_EXPIRY:-3600}
       - JWT_REFRESH_TOKEN_EXPIRY=${JWT_REFRESH_TOKEN_EXPIRY:-604800}
-      
+
       # Email Service Config
       - RESEND_API_KEY=${RESEND_API_KEY}
       - FROM_EMAIL=${FROM_EMAIL:-noreply@tabrela.com}
       - SERVICE_API_KEY=${SERVICE_API_KEY}
-      
+
       # Auth Service - Email Integration
       - EMAIL_SERVICE_API_KEY=${SERVICE_API_KEY}
       - PASSWORD_PEPPER=${PASSWORD_PEPPER}
-      
+
       # Service URLs (internal)
       - AUTH_SERVICE_URL=http://localhost:8081
       - ATTENDANCE_SERVICE_URL=http://localhost:8082
       - MERIT_SERVICE_URL=http://localhost:8083
       - TABULATION_SERVICE_URL=http://localhost:8084
       - EMAIL_SERVICE_URL=http://localhost:5000
-      
+
       # Frontend URL for email templates
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
-      
+
       # General
       - RUST_LOG=${RUST_LOG:-info}
       - ENVIRONMENT=${ENVIRONMENT:-production}

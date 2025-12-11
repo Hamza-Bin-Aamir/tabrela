@@ -4,14 +4,14 @@ pub mod csrf;
 pub mod database;
 pub mod email_client;
 pub mod handlers;
-pub mod jwt;
 pub mod models;
+pub mod paseto;
 pub mod security;
 
 pub use config::Config;
 pub use database::Database;
 pub use email_client::EmailClient;
-pub use jwt::JwtService;
+pub use paseto::PasetoService;
 
 use axum::{
     middleware,
@@ -23,7 +23,7 @@ use tower_http::cors::{Any, CorsLayer};
 
 pub struct AppState {
     pub db: Database,
-    pub jwt_service: JwtService,
+    pub paseto_service: PasetoService,
     pub email_client: EmailClient,
     pub config: Config,
 }
@@ -33,11 +33,11 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
     let db = Database::new(&config.database_url).await?;
     db.migrate().await?;
 
-    let jwt_service = JwtService::new(
+    let paseto_service = PasetoService::new(
         config.jwt_secret.clone(),
         config.jwt_access_token_expiry,
         config.jwt_refresh_token_expiry,
-    );
+    )?;
 
     let email_client = EmailClient::new(
         config.email_service_url.clone(),
@@ -46,7 +46,7 @@ pub async fn create_app() -> Result<Router, Box<dyn std::error::Error>> {
 
     let state = Arc::new(AppState {
         db,
-        jwt_service,
+        paseto_service,
         email_client,
         config: config.clone(),
     });

@@ -68,9 +68,9 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const result = await register({ 
-        username, 
-        email, 
+      const result = await register({
+        username,
+        email,
         password,
         reg_number: regNumber,
         year_joined: parseInt(yearJoined),
@@ -265,4 +265,3 @@ export default function SignupPage() {
     </section>
   );
 }
-
