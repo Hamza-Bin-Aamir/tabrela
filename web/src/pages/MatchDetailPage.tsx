@@ -20,7 +20,7 @@ type DragItem = CheckedInUserInfo | { guest_name: string; isGuest: true };
 
 export default function MatchDetailPage() {
   const { matchId } = useParams<{ matchId: string }>();
-  
+
   const [match, setMatch] = useState<MatchResponse | null>(null);
   const [series, setSeries] = useState<MatchSeries | null>(null);
   const [allocationPool, setAllocationPool] = useState<AllocationPoolResponse | null>(null);
@@ -37,17 +37,17 @@ export default function MatchDetailPage() {
 
   const loadMatchData = useCallback(async () => {
     if (!matchId) return;
-    
+
     try {
       setLoading(true);
       // Get match details first
       const matchData = await TabulationService.getMatch(matchId);
       setMatch(matchData);
-      
+
       // Get series to get the allocation pool
       const seriesData = await TabulationService.getSeries(matchData.series_id);
       setSeries(seriesData);
-      
+
       // Get allocation pool for the series
       const poolData = await TabulationService.getAllocationPool(matchData.series_id);
       setAllocationPool(poolData);
@@ -232,7 +232,7 @@ export default function MatchDetailPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <Link 
+              <Link
                 to={`/admin/events/${series?.event_id}/matches`}
                 className="text-sm text-gray-500 hover:text-gray-700"
               >
@@ -256,7 +256,7 @@ export default function MatchDetailPage() {
               </span>
             </div>
           </div>
-          
+
           {/* Tabs */}
           <div className="mt-4 border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
@@ -304,7 +304,7 @@ export default function MatchDetailPage() {
                   + Add Guest
                 </button>
               </div>
-              
+
               <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
                 {availableUsers.length === 0 ? (
                   <p className="text-gray-500 text-sm text-center py-4">
@@ -318,8 +318,8 @@ export default function MatchDetailPage() {
                       onDragStart={() => handleDragStart(user)}
                       onDragEnd={handleDragEnd}
                       className={`p-3 rounded-lg cursor-grab hover:bg-gray-100 transition-colors border ${
-                        user.is_allocated 
-                          ? 'bg-yellow-50 border-yellow-300' 
+                        user.is_allocated
+                          ? 'bg-yellow-50 border-yellow-300'
                           : 'bg-gray-50 border-gray-200'
                       }`}
                     >
@@ -332,7 +332,7 @@ export default function MatchDetailPage() {
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {user.checked_in_at 
+                        {user.checked_in_at
                           ? `Checked in at ${new Date(user.checked_in_at).toLocaleTimeString()}`
                           : 'Not checked in'}
                       </div>
@@ -375,7 +375,7 @@ export default function MatchDetailPage() {
               {/* Adjudicators */}
               <div className="bg-white rounded-lg shadow p-4">
                 <h2 className="text-lg font-semibold mb-4">Adjudicators</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Voting Adjudicators */}
                   <AdjudicatorDropZone
@@ -402,7 +402,7 @@ export default function MatchDetailPage() {
               {/* Resources */}
               <div className="bg-white rounded-lg shadow p-4">
                 <h2 className="text-lg font-semibold mb-4">Resources</h2>
-                
+
                 <ResourceDropZone
                   teams={match.teams}
                   draggedUser={draggedUser}
@@ -551,9 +551,9 @@ interface FourTeamLayoutProps {
 }
 
 const fourTeamPositionOrder: FourTeamPosition[] = [
-  'opening_government', 
-  'opening_opposition', 
-  'closing_government', 
+  'opening_government',
+  'opening_opposition',
+  'closing_government',
   'closing_opposition'
 ];
 
@@ -584,15 +584,15 @@ function FourTeamLayout({ teams, draggedUser, onDrop, onRemove }: FourTeamLayout
       {fourTeamPositionOrder.map(position => {
         const team = teams.find(t => t.four_team_position === position);
         const roles = fourTeamSpeakerRoles[position];
-        
+
         return (
           <div key={position} className={`rounded-lg border-2 p-4 ${fourTeamPositionColors[position]}`}>
             <h3 className="font-medium text-sm mb-3">{fourTeamPositionNames[position]}</h3>
-            
+
             <div className="space-y-2">
               {roles.map((role) => {
                 const speaker = team?.speakers.find(s => s.four_team_speaker_role === role);
-                
+
                 return (
                   <div
                     key={role}
@@ -672,15 +672,15 @@ function TwoTeamLayout({ teams, draggedUser, onDrop, onRemove }: TwoTeamLayoutPr
       {positions.map(position => {
         const team = teams.find(t => t.two_team_position === position);
         const roles = twoTeamSpeakerRoles[position];
-        
+
         return (
           <div key={position} className={`rounded-lg border-2 p-4 ${twoTeamPositionColors[position]}`}>
             <h3 className="font-medium text-sm mb-3">{twoTeamPositionNames[position]}</h3>
-            
+
             <div className="space-y-2">
               {roles.map((role) => {
                 const speaker = team?.speakers.find(s => s.two_team_speaker_role === role);
-                
+
                 return (
                   <div
                     key={role}
@@ -746,7 +746,7 @@ function AdjudicatorDropZone({ title, adjudicators, draggedUser, onDrop, onRemov
         {title}
         <span className="text-xs text-gray-500">{adjudicators.length} assigned</span>
       </h3>
-      
+
       <div
         onDragOver={(e) => {
           if (draggedUser) {
@@ -857,7 +857,7 @@ interface ResultsTabProps {
 function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
   // Calculate average scores per speaker
   const speakerScoreMap = new Map<string, { total: number; count: number; feedback: string[] }>();
-  
+
   ballots.forEach(ballot => {
     ballot.speaker_scores.forEach(score => {
       const existing = speakerScoreMap.get(score.allocation_id) || { total: 0, count: 0, feedback: [] };
@@ -885,7 +885,7 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
       {/* Release Controls */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">Score Release Settings</h2>
-        
+
         <div className="flex items-center gap-8">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -896,7 +896,7 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
             />
             <span className="font-medium">Release Scores to Participants</span>
           </label>
-          
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -926,17 +926,17 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
       {/* Team Results */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">Team Results</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {match.teams.map(team => {
             const ranks = teamRankMap.get(team.id) || [];
-            const avgRank = ranks.length > 0 
+            const avgRank = ranks.length > 0
               ? (ranks.reduce((a, b) => a + b, 0) / ranks.length).toFixed(1)
               : null;
 
             return (
-              <div 
-                key={team.id} 
+              <div
+                key={team.id}
                 className={`rounded-lg p-4 border-2 ${
                   team.final_rank === 1 ? 'border-yellow-400 bg-yellow-50' :
                   team.final_rank === 2 ? 'border-gray-400 bg-gray-50' :
@@ -946,7 +946,7 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
               >
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium text-sm">
-                    {team.four_team_position?.replace(/_/g, ' ').toUpperCase() || 
+                    {team.four_team_position?.replace(/_/g, ' ').toUpperCase() ||
                      team.two_team_position?.replace(/_/g, ' ').toUpperCase() ||
                      team.team_name || 'Team'}
                   </h3>
@@ -961,13 +961,13 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
                     </span>
                   )}
                 </div>
-                
+
                 {avgRank && (
                   <div className="text-sm text-gray-500 mb-2">
                     Avg Rank: {avgRank}
                   </div>
                 )}
-                
+
                 <div className="text-sm text-gray-500 mb-3">
                   Total Points: {team.total_speaker_points ? Number(team.total_speaker_points).toFixed(1) : '—'}
                 </div>
@@ -1001,7 +1001,7 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
         <h2 className="text-lg font-semibold mb-4">
           Ballot Submissions ({ballots.length})
         </h2>
-        
+
         {ballots.length === 0 ? (
           <p className="text-gray-500 text-center py-4">
             No ballots have been submitted yet.
@@ -1013,13 +1013,13 @@ function ResultsTab({ match, ballots, onToggleRelease }: ResultsTabProps) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-medium">{ballot.adjudicator_username}</div>
                   <div className="text-sm text-gray-500">
-                    {ballot.is_voting ? 'Voting' : 'Non-Voting'} • 
-                    {ballot.is_submitted 
-                      ? ` Submitted ${ballot.submitted_at ? new Date(ballot.submitted_at).toLocaleString() : ''}` 
+                    {ballot.is_voting ? 'Voting' : 'Non-Voting'} •
+                    {ballot.is_submitted
+                      ? ` Submitted ${ballot.submitted_at ? new Date(ballot.submitted_at).toLocaleString() : ''}`
                       : ' Draft'}
                   </div>
                 </div>
-                
+
                 {ballot.notes && (
                   <div className="mb-3 p-3 bg-gray-50 rounded text-sm text-gray-700">
                     {ballot.notes}

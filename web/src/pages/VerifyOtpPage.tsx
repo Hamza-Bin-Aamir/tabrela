@@ -12,7 +12,7 @@ export default function VerifyOtpPage() {
   const { verifyOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Get email from navigation state
   const email = (location.state as { email?: string })?.email || '';
 

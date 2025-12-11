@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { TabulationService } from '../services/tabulation';
 import { AttendanceService } from '../services/attendance';
-import type { 
-  MatchSeries, 
-  MatchResponse, 
-  Event, 
+import type {
+  MatchSeries,
+  MatchResponse,
+  Event,
   TeamFormat,
   CreateSeriesRequest,
   CreateMatchRequest,
@@ -45,15 +45,15 @@ export default function AdminMatchesPage() {
 
       // Load series for this event - for friendly matches, there should be only one
       const seriesResponse = await TabulationService.listSeries(eventId);
-      
+
       if (seriesResponse.series.length > 0) {
         // Use the first (and should be only) series
         const mainSeries = seriesResponse.series[0];
         setSeries(mainSeries);
-        
+
         // Load matches for this series
-        const matchesResponse = await TabulationService.listMatches({ 
-          seriesId: mainSeries.id 
+        const matchesResponse = await TabulationService.listMatches({
+          seriesId: mainSeries.id
         });
         setMatches(matchesResponse.matches);
       } else {
@@ -119,10 +119,10 @@ export default function AdminMatchesPage() {
       setShowCreateMatch(false);
       setNewMatchRoom('');
       setNewMatchMotion('');
-      
+
       // Reload matches
-      const matchesResponse = await TabulationService.listMatches({ 
-        seriesId: series.id 
+      const matchesResponse = await TabulationService.listMatches({
+        seriesId: series.id
       });
       setMatches(matchesResponse.matches);
     } catch (err: unknown) {

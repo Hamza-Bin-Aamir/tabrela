@@ -7,20 +7,24 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function usePWAInstall() {
+  // Check if already installed on first render
+  const checkInstalled = () => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      return true;
+    }
+    if ((window.navigator as unknown as { standalone?: boolean }).standalone === true) {
+      return true;
+    }
+    return false;
+  };
+
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(checkInstalled);
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
-
-    // Check if running as iOS PWA
-    if ((window.navigator as unknown as { standalone?: boolean }).standalone === true) {
-      setIsInstalled(true);
+    // Skip if already installed
+    if (isInstalled) {
       return;
     }
 

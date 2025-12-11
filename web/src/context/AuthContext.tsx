@@ -28,10 +28,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const currentUser = await AuthService.getCurrentUser();
           setUser(currentUser);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to load user:', error);
-        // Clear invalid tokens without calling logout endpoint
-        AuthService.clearLocalSession();
+
+        // Only clear session if it's an authentication error
+        // Network errors should not log the user out
+        const err = error as Error & { name?: string };
+        if (err?.name === 'AuthenticationError') {
+          console.log('Authentication expired, clearing session');
+          AuthService.clearLocalSession();
+        } else if (err?.name === 'NetworkError') {
+          console.warn('Network error loading user, keeping session intact');
+          // Try to load from stored user data
+          const storedUser = AuthService.getStoredUser();
+          if (storedUser) {
+            setUser(storedUser);
+          }
+        } else {
+          // For other errors, be conservative and clear session
+          console.log('Unknown error type, clearing session');
+          AuthService.clearLocalSession();
+        }
       } finally {
         setIsLoading(false);
       }
@@ -83,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

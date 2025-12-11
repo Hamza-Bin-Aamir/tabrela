@@ -435,9 +435,9 @@ export interface AdminAwardListResponse {
 export type TeamFormat = 'two_team' | 'four_team';
 export type TwoTeamPosition = 'government' | 'opposition';
 export type FourTeamPosition = 'opening_government' | 'opening_opposition' | 'closing_government' | 'closing_opposition';
-export type TwoTeamSpeakerRole = 
-  | 'prime_minister' 
-  | 'deputy_prime_minister' 
+export type TwoTeamSpeakerRole =
+  | 'prime_minister'
+  | 'deputy_prime_minister'
   | 'government_whip'
   | 'leader_of_opposition'
   | 'deputy_leader_of_opposition'

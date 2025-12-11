@@ -1,14 +1,14 @@
-:root { 
-  --site-max-width: 1400px; 
-  --header-height: 72px; 
+:root {
+  --site-max-width: 1400px;
+  --header-height: 72px;
   --scrollbar-width: 12px;
   --scrollbar-thumb-color: #6366f1;
   --scrollbar-thumb-hover-color: #4f46e5;
   --scrollbar-track-color: #e5e7eb;
 }
 
-html, body, #root { 
-  height: 100%; 
+html, body, #root {
+  height: 100%;
 }
 
 /* Custom Scrollbar Styles */
@@ -49,8 +49,8 @@ html {
   scroll-behavior: smooth;
 }
 
-body { 
-  margin: 0; 
+body {
+  margin: 0;
   background-color: #f9fafb; /* bg-gray-50 */
   color: #111827; /* text-gray-900 */
   -webkit-font-smoothing: antialiased;
@@ -58,11 +58,11 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.app-shell { 
-  display: flex; 
-  flex-direction: column; 
-  min-height: 100vh; 
-  padding-top: var(--header-height); 
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding-top: var(--header-height);
 }
 
 /* Fixed full-width header */
@@ -363,13 +363,13 @@ body {
 }
 
 /* Main content should be at least viewport height minus header so footer stays out of view on load */
-.site-main { 
-  flex: 1 0 auto; 
-  max-width: var(--site-max-width); 
+.site-main {
+  flex: 1 0 auto;
+  max-width: var(--site-max-width);
   width: 100%;
-  margin: 0 auto; 
-  padding: 2rem 2rem; 
-  min-height: calc(100vh - var(--header-height)); 
+  margin: 0 auto;
+  padding: 2rem 2rem;
+  min-height: calc(100vh - var(--header-height));
 }
 
 @media (max-width: 768px) {
@@ -378,7 +378,7 @@ body {
   }
 }
 
-.site-footer { 
+.site-footer {
   background-color: rgba(255, 255, 255, 0.9); /* bg-white/90 */
   border-top: 1px solid #e5e7eb; /* border-gray-200 */
   padding: 3rem 0 1.5rem;
@@ -402,7 +402,7 @@ body {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .footer-logos {
     justify-content: center;
   }

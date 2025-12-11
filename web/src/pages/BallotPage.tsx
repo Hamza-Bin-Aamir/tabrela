@@ -28,7 +28,7 @@ interface TeamRankState {
 export default function BallotPage() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
-  
+
   const [match, setMatch] = useState<MatchResponse | null>(null);
   const [existingBallot, setExistingBallot] = useState<BallotResponse | null>(null);
   const [speakerScores, setSpeakerScores] = useState<SpeakerScoreState[]>([]);
@@ -41,28 +41,28 @@ export default function BallotPage() {
 
   const loadMatchData = useCallback(async () => {
     if (!matchId) return;
-    
+
     try {
       setLoading(true);
-      
+
       // Get match details
       const matchData = await TabulationService.getMatch(matchId);
       setMatch(matchData);
-      
+
       // Try to get existing ballot
       try {
         const ballotData = await TabulationService.getMyBallot(matchId);
         setExistingBallot(ballotData);
         setIsVotingAdjudicator(ballotData.is_voting);
         setNotes(ballotData.notes || '');
-        
+
         // Initialize from existing ballot
         if (ballotData.speaker_scores.length > 0) {
           // Map existing scores
           const existingScoresMap = new Map(
             ballotData.speaker_scores.map(s => [s.allocation_id, s])
           );
-          
+
           const scores: SpeakerScoreState[] = [];
           matchData.teams.forEach(team => {
             const position = team.four_team_position || team.two_team_position || '';
@@ -82,12 +82,12 @@ export default function BallotPage() {
         } else {
           initializeSpeakerScores(matchData.teams);
         }
-        
+
         if (ballotData.team_rankings.length > 0) {
           const existingRanksMap = new Map(
             ballotData.team_rankings.map(r => [r.team_id, r])
           );
-          
+
           const ranks: TeamRankState[] = matchData.teams.map(team => {
             const existing = existingRanksMap.get(team.id);
             return {
@@ -151,13 +151,13 @@ export default function BallotPage() {
   }, [loadMatchData]);
 
   const handleScoreChange = (allocationId: string, value: number) => {
-    setSpeakerScores(prev => prev.map(s => 
+    setSpeakerScores(prev => prev.map(s =>
       s.allocation_id === allocationId ? { ...s, score: value } : s
     ));
   };
 
   const handleFeedbackChange = (allocationId: string, value: string) => {
-    setSpeakerScores(prev => prev.map(s => 
+    setSpeakerScores(prev => prev.map(s =>
       s.allocation_id === allocationId ? { ...s, feedback: value } : s
     ));
   };
@@ -167,11 +167,11 @@ export default function BallotPage() {
       // Find the team that currently has this rank
       const teamWithNewRank = prev.find(t => t.rank === newRank && t.team_id !== teamId);
       const teamBeingChanged = prev.find(t => t.team_id === teamId);
-      
+
       if (!teamBeingChanged) return prev;
-      
+
       const oldRank = teamBeingChanged.rank;
-      
+
       return prev.map(t => {
         if (t.team_id === teamId) {
           return { ...t, rank: newRank, is_winner: newRank === 1 };
@@ -205,7 +205,7 @@ export default function BallotPage() {
 
   const handleSubmit = async () => {
     if (!matchId) return;
-    
+
     const validationError = validateBallot();
     if (validationError) {
       setError(validationError);
@@ -279,14 +279,14 @@ export default function BallotPage() {
   }
 
   const isFourTeam = match.teams.some(t => t.four_team_position);
-  
+
   // Separate teams into government and opposition sides
-  const govTeams = match.teams.filter(t => 
-    t.two_team_position === 'government' || 
+  const govTeams = match.teams.filter(t =>
+    t.two_team_position === 'government' ||
     t.four_team_position?.includes('government')
   );
-  const oppTeams = match.teams.filter(t => 
-    t.two_team_position === 'opposition' || 
+  const oppTeams = match.teams.filter(t =>
+    t.two_team_position === 'opposition' ||
     t.four_team_position?.includes('opposition')
   );
 
@@ -301,13 +301,13 @@ export default function BallotPage() {
   };
 
   const renderTeamCard = (team: typeof match.teams[0], isGov: boolean) => {
-    const teamSpeakers = speakerScores.filter(s => 
+    const teamSpeakers = speakerScores.filter(s =>
       team.speakers.some(sp => sp.allocation_id === s.allocation_id)
     );
 
     return (
-      <div 
-        key={team.id} 
+      <div
+        key={team.id}
         className={`rounded-lg border-2 p-4 ${
           isGov ? 'border-blue-300 bg-blue-50' : 'border-purple-300 bg-purple-50'
         }`}
@@ -315,7 +315,7 @@ export default function BallotPage() {
         <h3 className={`font-semibold text-lg mb-4 ${isGov ? 'text-blue-800' : 'text-purple-800'}`}>
           {getTeamLabel(team)}
         </h3>
-        
+
         <div className="space-y-4">
           {teamSpeakers.length > 0 ? teamSpeakers.map(speaker => (
             <div key={speaker.allocation_id} className="bg-white rounded-lg p-4 shadow-sm">
@@ -344,7 +344,7 @@ export default function BallotPage() {
                   />
                 </div>
               </div>
-              
+
               <textarea
                 placeholder="Feedback for this speaker (optional)"
                 value={speaker.feedback}
@@ -421,7 +421,7 @@ export default function BallotPage() {
                 </span>
               </div>
             </div>
-            
+
             {/* Two-column layout: Gov on left, Opp on right */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Government Side */}
@@ -446,11 +446,11 @@ export default function BallotPage() {
             <p className="text-sm text-gray-500 mb-4">
               Rank each team from 1st to 4th place.
             </p>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {teamRanks.sort((a, b) => a.rank - b.rank).map(team => (
-                <div 
-                  key={team.team_id} 
+                <div
+                  key={team.team_id}
                   className={`rounded-lg p-4 border-2 text-center ${
                     team.rank === 1 ? 'border-yellow-400 bg-yellow-50' :
                     team.rank === 2 ? 'border-gray-400 bg-gray-50' :
@@ -516,11 +516,11 @@ export default function BallotPage() {
             {isVotingAdjudicator ? 'Private Notes' : 'Feedback'}
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            {isVotingAdjudicator 
+            {isVotingAdjudicator
               ? 'These notes are private and visible only to admins.'
               : 'Provide your overall feedback on the debate.'}
           </p>
-          
+
           <textarea
             placeholder={isVotingAdjudicator ? 'Add private notes...' : 'Your feedback...'}
             value={notes}
@@ -542,8 +542,8 @@ export default function BallotPage() {
             onClick={handleSubmit}
             disabled={submitting}
             className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-              submitting 
-                ? 'bg-blue-400 cursor-not-allowed' 
+              submitting
+                ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >

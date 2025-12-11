@@ -11,13 +11,13 @@ export default function AdminMeritPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
+
   // Modal state for updating merit
   const [selectedUser, setSelectedUser] = useState<UserMeritInfo | null>(null);
   const [changeAmount, setChangeAmount] = useState<string>('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // History modal state
   const [historyUser, setHistoryUser] = useState<UserMeritInfo | null>(null);
   const [history, setHistory] = useState<MeritHistoryEntry[]>([]);
@@ -49,7 +49,7 @@ export default function AdminMeritPage() {
 
   const loadHistory = useCallback(async () => {
     if (!historyUser) return;
-    
+
     setHistoryLoading(true);
     try {
       const response = await AdminMeritService.getUserMeritHistory(
@@ -86,7 +86,7 @@ export default function AdminMeritPage() {
         change_amount: parseInt(changeAmount, 10),
         reason: reason.trim(),
       });
-      
+
       setSuccessMessage(
         `Merit updated for ${result.username}: ${result.previous_merit} → ${result.new_merit}`
       );
@@ -272,7 +272,7 @@ export default function AdminMeritPage() {
             <p className="text-sm text-gray-500 mb-4">
               Current merit: <span className="font-medium">{selectedUser.merit_points}</span>
             </p>
-            
+
             <form onSubmit={handleUpdateMerit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -290,7 +290,7 @@ export default function AdminMeritPage() {
                   Use positive numbers to add merit, negative to remove
                 </p>
               </div>
-              
+
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Reason (required)
@@ -306,7 +306,7 @@ export default function AdminMeritPage() {
                   maxLength={500}
                 />
               </div>
-              
+
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
@@ -352,7 +352,7 @@ export default function AdminMeritPage() {
                 </svg>
               </button>
             </div>
-            
+
             {historyLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -412,7 +412,7 @@ export default function AdminMeritPage() {
                     ))}
                   </tbody>
                 </table>
-                
+
                 {historyTotalPages > 1 && (
                   <div className="mt-4 flex items-center justify-between">
                     <button

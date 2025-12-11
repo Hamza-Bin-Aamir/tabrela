@@ -1,5 +1,6 @@
 import { MERIT_API_URL } from './config';
 import { TokenManager } from './tokenManager';
+import { fetchWithRetry } from './retryUtils';
 import type {
   ProfileResponse,
   PublicProfileResponse,
@@ -28,29 +29,31 @@ class MeritHttpClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    return fetchWithRetry(async () => {
+      const url = `${this.baseUrl}${endpoint}`;
 
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
-    const accessToken = TokenManager.getAccessToken();
-    if (accessToken) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
-    }
+      const accessToken = TokenManager.getAccessToken();
+      if (accessToken) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+      }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   }
 
   async get<T>(endpoint: string): Promise<T> {

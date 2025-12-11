@@ -1,10 +1,12 @@
 import { AUTH_API_URL } from './config';
 import { TokenManager } from './tokenManager';
 import type { ApiError } from './types';
+import { fetchWithRetry, isNetworkError, AuthenticationError } from './retryUtils';
 
-// HTTP Client with automatic token handling
+// HTTP Client with automatic token handling and exponential backoff
 // Note: This client is primarily used for auth-related requests
 export class HttpClient {
+
   private static async refreshAccessToken(): Promise<boolean> {
     const refreshToken = TokenManager.getRefreshToken();
     if (!refreshToken) {
@@ -30,6 +32,11 @@ export class HttpClient {
       TokenManager.updateRefreshToken(data.refresh_token);
       return true;
     } catch (error) {
+      // Don't clear tokens on network errors - might be temporary
+      if (isNetworkError(error)) {
+        console.warn('Network error during token refresh, will retry later');
+        return false;
+      }
       TokenManager.clearTokens();
       return false;
     }
@@ -67,14 +74,18 @@ export class HttpClient {
           csrfToken = data.csrf_token;
         }
       } catch (error) {
-        console.warn('Failed to fetch CSRF token:', error);
+      // Network error getting CSRF token - log but continue
+      if (isNetworkError(error)) {
+        console.warn('Network error fetching CSRF token:', error);
       }
     }
+  }
 
-    if (csrfToken && options.method !== 'GET') {
-      headers['X-CSRF-Token'] = csrfToken;
-    }
+  if (csrfToken && options.method !== 'GET') {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
 
+  return fetchWithRetry(async () => {
     let response = await fetch(`${AUTH_API_URL}${endpoint}`, {
       ...options,
       headers,
@@ -93,6 +104,9 @@ export class HttpClient {
             headers,
           });
         }
+      } else {
+        // Token refresh failed - likely auth issue, not network
+        throw new AuthenticationError('Session expired. Please log in again.');
       }
     }
 
@@ -100,13 +114,19 @@ export class HttpClient {
       const error: ApiError = await response.json().catch(() => ({
         error: 'An unexpected error occurred',
       }));
+
+      // Don't retry on client errors (4xx except 401 which is handled above)
+      if (response.status >= 400 && response.status < 500 && response.status !== 401) {
+        throw new Error(error.error);
+      }
+
+      // Server errors (5xx) - might be temporary, could retry
       throw new Error(error.error);
     }
 
     return response.json();
-  }
-
-  static async get<T>(endpoint: string): Promise<T> {
+  });
+}  static async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'GET' });
   }
 
