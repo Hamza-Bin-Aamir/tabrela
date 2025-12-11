@@ -117,9 +117,9 @@ This is your `VITE_API_URL` for the frontend.
 ### 2.2 Get SSH Connection Details
 
 From cPanel, note:
-- **Host**: Usually your server hostname 
+- **Host**: Usually your server hostname
 - **Username**: Your cPanel username
-- **Port**: Usually `22` 
+- **Port**: Usually `22`
 - **Path**: `~/public_html` or `~/public_html/subdomain_folder`
 
 ### 2.3 Test SSH Connection (Optional)
