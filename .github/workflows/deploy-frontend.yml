@@ -4,7 +4,7 @@
 # This workflow:
 # 1. Builds the React/Vite frontend
 # 2. Deploys compiled assets to cPanel shared hosting via rsync
-# 
+#
 # Triggers:
 # - On push to main (if frontend files changed)
 # - On repository_dispatch from webhook service (after Railway deploys backend)
@@ -33,18 +33,18 @@ on:
     paths:
       - 'web/**'
       - '.github/workflows/deploy-frontend.yml'
-  
+
   # Triggered by webhook service after Railway deployment succeeds
   repository_dispatch:
     types: [railway-deploy-success]
-  
+
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
   build-and-deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
-    
+
     steps:
       # ========================================================================
       # Checkout Code
@@ -77,7 +77,7 @@ jobs:
           # Backend API URL - the nginx gateway URL on Railway
           # Frontend config computes service paths automatically:
           # AUTH_API_URL = VITE_API_URL + /api/auth
-          # ATTENDANCE_API_URL = VITE_API_URL + /api/attendance  
+          # ATTENDANCE_API_URL = VITE_API_URL + /api/attendance
           # MERIT_API_URL = VITE_API_URL + /api/merit
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 

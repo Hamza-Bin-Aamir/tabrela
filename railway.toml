@@ -2,7 +2,7 @@
 # Tabrela - Railway Configuration
 # ==============================================================================
 # This file configures how Railway deploys the backend services.
-# 
+#
 # Railway will build using the root Dockerfile which includes:
 # - Nginx gateway (port 8080) - reverse proxy, exposed to Railway
 # - Auth service (port 8081) - internal, accessed via /api/auth/*
@@ -10,7 +10,7 @@
 # - Merit service (port 8083) - internal, accessed via /api/merit/*
 # - Email service (port 5000) - internal only
 #
-# IMPORTANT: 
+# IMPORTANT:
 # 1. Set PORT=8080 in Railway environment variables (nginx gateway port)
 # 2. Set RAILWAY_SERVICE_NAME in GitHub Secrets to match your Railway service name
 #    (Go to Railway Dashboard → Click on your service → The name shown at the top)
