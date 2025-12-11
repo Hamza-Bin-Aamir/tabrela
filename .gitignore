@@ -70,3 +70,6 @@ logs/
 .cargo/
 
 *.bak
+
+node_modules/
+dist/
