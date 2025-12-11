@@ -1,6 +1,6 @@
 -- Create admin_users table to track which users have admin privileges
 -- The first admin should be added manually by a DBA using:
--- INSERT INTO admin_users (id, user_id, granted_by, created_at) 
+-- INSERT INTO admin_users (id, user_id, granted_by, created_at)
 -- VALUES (gen_random_uuid(), '<user_id>', NULL, NOW());
 
 CREATE TABLE IF NOT EXISTS admin_users (

@@ -77,7 +77,7 @@ def send_verification_email():
         # Validate request data using Pydantic
         data = request.json
         validated_data = VerificationEmailRequest(**data)
-        
+
         to_email = validated_data.to_email
         username = validated_data.username
         otp = validated_data.otp
@@ -90,14 +90,14 @@ def send_verification_email():
             <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px;">
                 <h2 style="color: #333;">Hi {username},</h2>
                 <p style="color: #333; line-height: 1.6;">Thank you for registering! Please use the following one-time password (OTP) to verify your email address:</p>
-                
+
                 <div style="background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0;">
                     <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">{otp}</div>
                 </div>
-                
+
                 <p style="color: #333;"><strong>This code will expire in 10 minutes.</strong></p>
                 <p style="color: #333;">If you didn't create an account, you can safely ignore this email.</p>
-                
+
                 <div style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 12px;">
                     <p>&copy; 2025 Tabrela. All rights reserved.</p>
                 </div>
@@ -144,7 +144,7 @@ def send_password_reset_email():
         # Validate request data using Pydantic
         data = request.json
         validated_data = PasswordResetEmailRequest(**data)
-        
+
         to_email = validated_data.to_email
         username = validated_data.username
         otp = validated_data.otp
@@ -164,7 +164,7 @@ def send_password_reset_email():
                 <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
                     <strong style="color: #333;">Security Notice:</strong> <span style="color: #333;">If you didn't request a password reset, please ignore this email or contact support if you're concerned about your account security.</span>
                 </div>
-                
+
                 <div style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 12px;">
                     <p>&copy; 2025 Tabrela. All rights reserved.</p>
                 </div>
@@ -211,7 +211,7 @@ def send_welcome_email():
         # Validate request data using Pydantic
         data = request.json
         validated_data = WelcomeEmailRequest(**data)
-        
+
         to_email = validated_data.to_email
         username = validated_data.username
 
@@ -228,7 +228,7 @@ def send_welcome_email():
                     <a href="{FRONTEND_URL}" style="display: inline-block; background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px;">Go to Dashboard</a>
                 </div>
                 <p style="color: #333;">If you have any questions, feel free to reach out to our support team.</p>
-                
+
                 <div style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 12px;">
                     <p>&copy; 2025 Tabrela. All rights reserved.</p>
                 </div>
@@ -267,8 +267,8 @@ def send_welcome_email():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug = os.getenv("DEBUG", "False").lower() == "true"
-    
+
     logger.info(f"Starting email service on port {port}")
     logger.info(f"CORS configured for localhost only")
-    
+
     app.run(host="0.0.0.0", port=port, debug=debug)

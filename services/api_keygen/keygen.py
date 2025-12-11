@@ -13,10 +13,10 @@ def generate_password(length: int) -> str:
 
     # Define the pool of characters to choose from
     characters = string.ascii_letters + string.digits
-    
+
     # Use random.choice to select characters and join them into a string
     password = ''.join(random.choice(characters) for _ in range(length))
-    
+
     return password
 
 def main():
@@ -27,16 +27,16 @@ def main():
         description="A simple CLI tool to generate a random password of a specified length.",
         formatter_class=argparse.RawTextHelpFormatter
     )
-    
+
     # Define the required 'length' argument
     parser.add_argument(
-        'length', 
-        type=int, 
+        'length',
+        type=int,
         help="The desired length of the password (e.g., 12, 16)."
     )
-    
+
     args = parser.parse_args()
-    
+
     try:
         password = generate_password(args.length)
         print(f"Generated Password ({args.length} chars): {password}")

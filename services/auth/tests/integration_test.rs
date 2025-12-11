@@ -36,8 +36,8 @@ async fn create_verified_user(
     sqlx::query(
         r#"
         INSERT INTO users (
-            id, username, email, password_hash, salt, 
-            reg_number, year_joined, phone_number, 
+            id, username, email, password_hash, salt,
+            reg_number, year_joined, phone_number,
             email_verified, email_verified_at, created_at, updated_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, $10, $11)

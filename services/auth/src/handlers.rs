@@ -376,7 +376,7 @@ pub async fn login(
 
     // Generate tokens
     let access_token = state
-        .jwt_service
+        .paseto_service
         .create_access_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (
@@ -386,7 +386,7 @@ pub async fn login(
         })?;
 
     let refresh_token = state
-        .jwt_service
+        .paseto_service
         .create_refresh_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (
@@ -450,7 +450,7 @@ pub async fn refresh(
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
     // Validate refresh token
     let claims = state
-        .jwt_service
+        .paseto_service
         .validate_refresh_token(&payload.refresh_token)
         .map_err(|_| {
             (
@@ -528,7 +528,7 @@ pub async fn refresh(
 
     // Generate new tokens
     let access_token = state
-        .jwt_service
+        .paseto_service
         .create_access_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (
@@ -538,7 +538,7 @@ pub async fn refresh(
         })?;
 
     let new_refresh_token = state
-        .jwt_service
+        .paseto_service
         .create_refresh_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (
@@ -739,7 +739,7 @@ pub async fn verify_email(
 
     // Generate tokens for the verified user
     let access_token = state
-        .jwt_service
+        .paseto_service
         .create_access_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (
@@ -749,7 +749,7 @@ pub async fn verify_email(
         })?;
 
     let refresh_token = state
-        .jwt_service
+        .paseto_service
         .create_refresh_token(&user.id.to_string(), &user.username)
         .map_err(|_| {
             (

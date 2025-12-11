@@ -15,7 +15,7 @@ const BASE_URL: &str = "http://localhost:8081";
 async fn get_otp_from_db(pool: &PgPool, email: &str) -> Result<String, sqlx::Error> {
     let record = sqlx::query!(
         r#"
-        SELECT evt.otp 
+        SELECT evt.otp
         FROM email_verification_tokens evt
         JOIN users u ON evt.user_id = u.id
         WHERE u.email = $1
