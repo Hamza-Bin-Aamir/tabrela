@@ -3,7 +3,7 @@
 
 # Don't warn about unstaged files - this is normal workflow
 default_install_hook_types: [pre-commit]
-default_stages: [commit]
+default_stages: [pre-commit]
 fail_fast: false
 
 repos:
